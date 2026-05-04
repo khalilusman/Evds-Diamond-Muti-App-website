@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER_USER
+  CUSTOMER_ADMIN
+  EVDS_SUPPORT
+  EVDS_ADMIN
+}
+
+enum DiscStatus {
+  unused
+  active
+  expired_w1
+  active_w2
+  permanently_deactivated
+  voided
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  critical
+}
+
+// ─── 1. companies ────────────────────────────────────────────────────────────
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  country   String?
+  city      String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users        User[]
+  machines     Machine[]
+  activations  DiscActivation[]
+
+  @@map("companies")
+}
+
+// ─── 2. users ─────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  companyId    String?  @map("company_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  role         UserRole @default(CUSTOMER_USER)
+  isActive     Boolean  @default(true) @map("is_active")
+  language     String   @default("en")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  company         Company?         @relation(fields: [companyId], references: [id])
+  activations     DiscActivation[]
+  usageLogs       UsageLog[]
+  satTickets      SatTicket[]
+  costCalcs       CostCalculation[]
+  emailTokens     EmailToken[]
+  auditLogs       AuditLog[]
+  attempts        ActivationAttempt[]
+
+  @@map("users")
+}
+
+// ─── 3. machines ─────────────────────────────────────────────────────────────
+
+model Machine {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company     Company    @relation(fields: [companyId], references: [id])
+  usageLogs   UsageLog[]
+
+  @@map("machines")
+}
+
+// ─── 4. disc_families ────────────────────────────────────────────────────────
+
+model DiscFamily {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  abbreviation String   @unique
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  catalog DiscCatalog[]
+  labels  DiscLabel[]
+
+  @@map("disc_families")
+}
+
+// ─── 5. disc_catalog ─────────────────────────────────────────────────────────
+
+model DiscCatalog {
+  id           String  @id @default(uuid())
+  familyId     String  @map("family_id")
+  material     String
+  diameterMm   Int     @map("diameter_mm")
+  rpmMax       Int     @map("rpm_max")
+  feed2cm      Int?    @map("feed_2cm")
+  life2cm      Int?    @map("life_2cm")
+  feed3cm      Int?    @map("feed_3cm")
+  life3cm      Int?    @map("life_3cm")
+  miterFeed    Int?    @map("miter_feed")
+  newDiameter  Int     @map("new_diameter")
+  wornDiameter Int     @map("worn_diameter")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  family  DiscFamily @relation(fields: [familyId], references: [id])
+  labels  DiscLabel[]
+
+  @@unique([familyId, material, diameterMm])
+  @@map("disc_catalog")
+}
+
+// ─── 6. wear_reference ───────────────────────────────────────────────────────
+
+model WearReference {
+  id             String @id @default(uuid())
+  familyName     String @map("family_name")
+  wornThresholdMm Int   @map("worn_threshold_mm")
+  warnPct        Int    @default(80) @map("warn_pct")
+  criticalPct    Int    @default(95) @map("critical_pct")
+
+  @@map("wear_reference")
+}
+
+// ─── 7. disc_labels ──────────────────────────────────────────────────────────
+
+model DiscLabel {
+  id          String   @id @default(uuid())
+  catalogId   String   @map("catalog_id")
+  familyId    String   @map("family_id")
+  lotNumber   String   @map("lot_number")
+  uniqueCode  String   @unique @map("unique_code")
+  fullCode    String   @unique @map("full_code")
+  qrUrl       String   @map("qr_url")
+  status      DiscStatus @default(unused)
+  createdAt   DateTime @default(now()) @map("created_at")
+  createdBy   String   @map("created_by")
+
+  catalog    DiscCatalog    @relation(fields: [catalogId], references: [id])
+  family     DiscFamily     @relation(fields: [familyId], references: [id])
+  activation DiscActivation?
+  attempts   ActivationAttempt[]
+
+  @@map("disc_labels")
+}
+
+// ─── 8. disc_activations ─────────────────────────────────────────────────────
+
+model DiscActivation {
+  id                  String     @id @default(uuid())
+  labelId             String     @unique @map("label_id")
+  companyId           String     @map("company_id")
+  activatedById       String     @map("activated_by_id")
+  diameterAtActivation Int       @map("diameter_at_activation")
+  activationCount     Int        @default(1) @map("activation_count")
+  window1StartsAt     DateTime   @map("window1_starts_at")
+  window1ExpiresAt    DateTime   @map("window1_expires_at")
+  window2StartsAt     DateTime?  @map("window2_starts_at")
+  window2ExpiresAt    DateTime?  @map("window2_expires_at")
+  status              DiscStatus @default(active)
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  label       DiscLabel @relation(fields: [labelId], references: [id])
+  company     Company   @relation(fields: [companyId], references: [id])
+  activatedBy User      @relation(fields: [activatedById], references: [id])
+  usageLogs   UsageLog[]
+  costCalcs   CostCalculation[]
+
+  @@map("disc_activations")
+}
+
+// ─── 9. usage_logs ───────────────────────────────────────────────────────────
+
+model UsageLog {
+  id               String   @id @default(uuid())
+  activationId     String   @map("activation_id")
+  userId           String   @map("user_id")
+  machineId        String   @map("machine_id")
+  currentDiameter  Float    @map("current_diameter")
+  materialCut      String   @map("material_cut")
+  thicknessCm      Float    @map("thickness_cm")
+  notes            String?
+  loggedAt         DateTime @default(now()) @map("logged_at")
+
+  activation DiscActivation @relation(fields: [activationId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+  machine    Machine        @relation(fields: [machineId], references: [id])
+
+  @@map("usage_logs")
+}
+
+// ─── 10. sat_tickets ─────────────────────────────────────────────────────────
+
+model SatTicket {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  subject     String
+  description String
+  priority    TicketPriority @default(medium)
+  status      TicketStatus   @default(open)
+  assignedTo  String?        @map("assigned_to")
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("sat_tickets")
+}
+
+// ─── 11. cost_configs ────────────────────────────────────────────────────────
+
+model CostConfig {
+  id             String   @id @default(uuid())
+  discPriceCur   String   @default("EUR") @map("disc_price_cur")
+  discPrice      Float    @map("disc_price")
+  machineHourRate Float   @map("machine_hour_rate")
+  laborHourRate  Float    @map("labor_hour_rate")
+  effectiveFrom  DateTime @map("effective_from")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  calculations CostCalculation[]
+
+  @@map("cost_configs")
+}
+
+// ─── 12. cost_calculations ───────────────────────────────────────────────────
+
+model CostCalculation {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  activationId   String   @map("activation_id")
+  configId       String   @map("config_id")
+  squareMeters   Float    @map("square_meters")
+  costPerSqm     Float    @map("cost_per_sqm")
+  totalCost      Float    @map("total_cost")
+  calculatedAt   DateTime @default(now()) @map("calculated_at")
+
+  user       User           @relation(fields: [userId], references: [id])
+  activation DiscActivation @relation(fields: [activationId], references: [id])
+  config     CostConfig     @relation(fields: [configId], references: [id])
+
+  @@map("cost_calculations")
+}
+
+// ─── 13. activation_attempts ─────────────────────────────────────────────────
+
+model ActivationAttempt {
+  id         String   @id @default(uuid())
+  labelId    String?  @map("label_id")
+  userId     String?  @map("user_id")
+  ipAddress  String?  @map("ip_address")
+  codeUsed   String   @map("code_used")
+  success    Boolean
+  failReason String?  @map("fail_reason")
+  attemptedAt DateTime @default(now()) @map("attempted_at")
+
+  label DiscLabel? @relation(fields: [labelId], references: [id])
+  user  User?      @relation(fields: [userId], references: [id])
+
+  @@map("activation_attempts")
+}
+
+// ─── 14. email_tokens ────────────────────────────────────────────────────────
+
+model EmailToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  type      String
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("email_tokens")
+}
+
+// ─── 15. audit_logs ──────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  entity     String
+  entityId   String?  @map("entity_id")
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
