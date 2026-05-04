@@ -7,7 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ───────────────────────────────────────────────────────────────────
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum CompanyStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
 
 enum UserRole {
   CUSTOMER_USER
@@ -16,43 +23,72 @@ enum UserRole {
   EVDS_ADMIN
 }
 
-enum DiscStatus {
-  unused
-  active
-  expired_w1
-  active_w2
-  permanently_deactivated
-  voided
+enum LabelStatus {
+  UNUSED
+  ACTIVE
+  EXPIRED_W1
+  ACTIVE_W2
+  PERMANENTLY_DEACTIVATED
+  VOIDED
 }
 
-enum TicketStatus {
-  open
-  in_progress
-  resolved
-  closed
+enum ActivationStatus {
+  ACTIVE
+  EXPIRED
+  REPLACED
 }
 
-enum TicketPriority {
-  low
-  medium
-  high
-  critical
+enum SatStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  ESCALATED
 }
 
-// ─── 1. companies ────────────────────────────────────────────────────────────
+enum InputMethod {
+  DXF
+  MANUAL
+}
+
+enum AttemptResult {
+  SUCCESS
+  ALREADY_USED
+  MAX_ACTIVATIONS_REACHED
+  CODE_NOT_FOUND
+  VOIDED
+  WRONG_COMBINATION
+}
+
+enum TokenType {
+  PASSWORD_RESET
+  EMAIL_CONFIRM
+}
+
+// ─── 1. companies ─────────────────────────────────────────────────────────────
 
 model Company {
-  id        String   @id @default(uuid())
-  name      String
-  country   String?
-  city      String?
-  phone     String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                   String        @id @default(uuid())
+  name                 String        @db.VarChar(200)
+  contact_name         String        @db.VarChar(200)
+  email                String        @unique @db.VarChar(255)
+  country              String        @db.VarChar(100)
+  language             String        @default("es") @db.VarChar(10)
+  status               CompanyStatus @default(PENDING)
+  status_reason        String?       @db.Text
+  machine_cost_hour    Decimal?      @db.Decimal(10, 2)
+  labor_cost_hour      Decimal?      @db.Decimal(10, 2)
+  energy_cost_kwh      Decimal?      @db.Decimal(10, 4)
+  onboarding_complete  Boolean       @default(false)
+  created_at           DateTime      @default(now())
+  updated_at           DateTime      @updatedAt
 
-  users        User[]
-  machines     Machine[]
-  activations  DiscActivation[]
+  users            User[]
+  machines         Machine[]
+  activations      DiscActivation[]
+  cost_config      CostConfig?
+  cost_calcs       CostCalculation[]
+  disc_labels      DiscLabel[]
+  attempt_logs     ActivationAttempt[]
 
   @@map("companies")
 }
@@ -60,266 +96,275 @@ model Company {
 // ─── 2. users ─────────────────────────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(uuid())
-  companyId    String?  @map("company_id")
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  firstName    String   @map("first_name")
-  lastName     String   @map("last_name")
-  role         UserRole @default(CUSTOMER_USER)
-  isActive     Boolean  @default(true) @map("is_active")
-  language     String   @default("en")
-  lastLoginAt  DateTime? @map("last_login_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  company_id    String?
+  name          String   @db.VarChar(200)
+  email         String   @unique @db.VarChar(255)
+  password_hash String   @db.VarChar(255)
+  role          UserRole
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  company         Company?         @relation(fields: [companyId], references: [id])
-  activations     DiscActivation[]
-  usageLogs       UsageLog[]
-  satTickets      SatTicket[]
-  costCalcs       CostCalculation[]
-  emailTokens     EmailToken[]
-  auditLogs       AuditLog[]
-  attempts        ActivationAttempt[]
+  company      Company?     @relation(fields: [company_id], references: [id])
+  email_tokens EmailToken[]
+  audit_logs   AuditLog[]
 
   @@map("users")
 }
 
-// ─── 3. machines ─────────────────────────────────────────────────────────────
+// ─── 3. machines ──────────────────────────────────────────────────────────────
 
 model Machine {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(uuid())
+  company_id String
+  name       String   @db.VarChar(200)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
 
-  company     Company    @relation(fields: [companyId], references: [id])
-  usageLogs   UsageLog[]
+  company    Company    @relation(fields: [company_id], references: [id])
+  usage_logs UsageLog[]
 
   @@map("machines")
 }
 
-// ─── 4. disc_families ────────────────────────────────────────────────────────
+// ─── 4. disc_families ─────────────────────────────────────────────────────────
 
 model DiscFamily {
-  id           String   @id @default(uuid())
-  name         String   @unique
-  abbreviation String   @unique
-  createdAt    DateTime @default(now()) @map("created_at")
+  id           String  @id @default(uuid())
+  name         String  @unique @db.VarChar(50)
+  wear_rule_mm Int
+  description  String? @db.Text
 
-  catalog DiscCatalog[]
-  labels  DiscLabel[]
+  catalog         DiscCatalog[]
+  wear_references WearReference[]
+  disc_labels     DiscLabel[]
 
   @@map("disc_families")
 }
 
-// ─── 5. disc_catalog ─────────────────────────────────────────────────────────
+// ─── 5. disc_catalog ──────────────────────────────────────────────────────────
 
 model DiscCatalog {
-  id           String  @id @default(uuid())
-  familyId     String  @map("family_id")
-  material     String
-  diameterMm   Int     @map("diameter_mm")
-  rpmMax       Int     @map("rpm_max")
-  feed2cm      Int?    @map("feed_2cm")
-  life2cm      Int?    @map("life_2cm")
-  feed3cm      Int?    @map("feed_3cm")
-  life3cm      Int?    @map("life_3cm")
-  miterFeed    Int?    @map("miter_feed")
-  newDiameter  Int     @map("new_diameter")
-  wornDiameter Int     @map("worn_diameter")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id               String @id @default(uuid())
+  family_id        String
+  material_group   String @db.VarChar(100)
+  nominal_diameter Int
+  recommended_rpm  Int
+  diamond_height   Int
+  feed_2cm         Int
+  life_2cm         Int
+  feed_3cm         Int
+  life_3cm         Int
+  miter_feed       Int
 
-  family  DiscFamily @relation(fields: [familyId], references: [id])
-  labels  DiscLabel[]
+  family DiscFamily @relation(fields: [family_id], references: [id])
 
-  @@unique([familyId, material, diameterMm])
+  @@unique([family_id, material_group, nominal_diameter])
   @@map("disc_catalog")
 }
 
-// ─── 6. wear_reference ───────────────────────────────────────────────────────
+// ─── 6. wear_reference ────────────────────────────────────────────────────────
 
 model WearReference {
-  id             String @id @default(uuid())
-  familyName     String @map("family_name")
-  wornThresholdMm Int   @map("worn_threshold_mm")
-  warnPct        Int    @default(80) @map("warn_pct")
-  criticalPct    Int    @default(95) @map("critical_pct")
+  id               String @id @default(uuid())
+  family_id        String
+  nominal_diameter Int
+  measured_new     Int
+  measured_worn    Int
 
+  family DiscFamily @relation(fields: [family_id], references: [id])
+
+  @@unique([family_id, nominal_diameter])
   @@map("wear_reference")
 }
 
-// ─── 7. disc_labels ──────────────────────────────────────────────────────────
+// ─── 7. disc_labels ───────────────────────────────────────────────────────────
 
 model DiscLabel {
-  id          String   @id @default(uuid())
-  catalogId   String   @map("catalog_id")
-  familyId    String   @map("family_id")
-  lotNumber   String   @map("lot_number")
-  uniqueCode  String   @unique @map("unique_code")
-  fullCode    String   @unique @map("full_code")
-  qrUrl       String   @map("qr_url")
-  status      DiscStatus @default(unused)
-  createdAt   DateTime @default(now()) @map("created_at")
-  createdBy   String   @map("created_by")
+  id               String      @id @default(uuid())
+  lot_number       String      @db.VarChar(20)
+  family_id        String
+  nominal_diameter Int
+  unique_code      String      @unique @db.VarChar(8)
+  full_code        String      @db.VarChar(40)
+  qr_url           String      @db.VarChar(200)
+  status           LabelStatus @default(UNUSED)
+  activation_count Int         @default(0)
+  activated_by     String?
+  company_id       String?
+  created_at       DateTime    @default(now())
+  voided_at        DateTime?
+  void_reason      String?     @db.Text
 
-  catalog    DiscCatalog    @relation(fields: [catalogId], references: [id])
-  family     DiscFamily     @relation(fields: [familyId], references: [id])
-  activation DiscActivation?
-  attempts   ActivationAttempt[]
+  family      DiscFamily       @relation(fields: [family_id], references: [id])
+  company     Company?         @relation(fields: [company_id], references: [id])
+  activations DiscActivation[]
+  attempts    ActivationAttempt[]
 
   @@map("disc_labels")
 }
 
-// ─── 8. disc_activations ─────────────────────────────────────────────────────
+// ─── 8. disc_activations ──────────────────────────────────────────────────────
 
 model DiscActivation {
-  id                  String     @id @default(uuid())
-  labelId             String     @unique @map("label_id")
-  companyId           String     @map("company_id")
-  activatedById       String     @map("activated_by_id")
-  diameterAtActivation Int       @map("diameter_at_activation")
-  activationCount     Int        @default(1) @map("activation_count")
-  window1StartsAt     DateTime   @map("window1_starts_at")
-  window1ExpiresAt    DateTime   @map("window1_expires_at")
-  window2StartsAt     DateTime?  @map("window2_starts_at")
-  window2ExpiresAt    DateTime?  @map("window2_expires_at")
-  status              DiscStatus @default(active)
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
+  id                    String           @id @default(uuid())
+  label_id              String
+  company_id            String
+  user_id               String
+  machine_id            String
+  diameter_at_activation Decimal         @db.Decimal(6, 1)
+  thickness_cm          Int
+  activation_window     Int              @default(1)
+  activated_at          DateTime         @default(now())
+  expires_at            DateTime
+  expired_at            DateTime?
+  status                ActivationStatus @default(ACTIVE)
+  notes                 String?          @db.Text
 
-  label       DiscLabel @relation(fields: [labelId], references: [id])
-  company     Company   @relation(fields: [companyId], references: [id])
-  activatedBy User      @relation(fields: [activatedById], references: [id])
-  usageLogs   UsageLog[]
-  costCalcs   CostCalculation[]
+  label      DiscLabel    @relation(fields: [label_id], references: [id])
+  company    Company      @relation(fields: [company_id], references: [id])
+  usage_logs UsageLog[]
+  sat_tickets SatTicket[]
 
   @@map("disc_activations")
 }
 
-// ─── 9. usage_logs ───────────────────────────────────────────────────────────
+// ─── 9. usage_logs ────────────────────────────────────────────────────────────
 
 model UsageLog {
   id               String   @id @default(uuid())
-  activationId     String   @map("activation_id")
-  userId           String   @map("user_id")
-  machineId        String   @map("machine_id")
-  currentDiameter  Float    @map("current_diameter")
-  materialCut      String   @map("material_cut")
-  thicknessCm      Float    @map("thickness_cm")
-  notes            String?
-  loggedAt         DateTime @default(now()) @map("logged_at")
+  activation_id    String
+  company_id       String
+  user_id          String
+  machine_id       String
+  current_diameter Decimal  @db.Decimal(6, 1)
+  meters_cut       Decimal  @db.Decimal(8, 2)
+  rpm_used         Int?
+  feed_used        Int?
+  material_group   String   @db.VarChar(100)
+  thickness_cm     Int
+  cut_type         String?  @db.VarChar(50)
+  water_flow_ok    Boolean?
+  notes            String?  @db.Text
+  logged_at        DateTime @default(now())
 
-  activation DiscActivation @relation(fields: [activationId], references: [id])
-  user       User           @relation(fields: [userId], references: [id])
-  machine    Machine        @relation(fields: [machineId], references: [id])
+  activation DiscActivation @relation(fields: [activation_id], references: [id])
+  machine    Machine        @relation(fields: [machine_id], references: [id])
 
   @@map("usage_logs")
 }
 
-// ─── 10. sat_tickets ─────────────────────────────────────────────────────────
+// ─── 10. sat_tickets ──────────────────────────────────────────────────────────
 
 model SatTicket {
-  id          String         @id @default(uuid())
-  userId      String         @map("user_id")
-  subject     String
-  description String
-  priority    TicketPriority @default(medium)
-  status      TicketStatus   @default(open)
-  assignedTo  String?        @map("assigned_to")
-  resolvedAt  DateTime?      @map("resolved_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  id               String    @id @default(uuid())
+  activation_id    String
+  company_id       String
+  reported_by      String
+  symptom_code     String    @db.VarChar(50)
+  symptom_detail   String?   @db.Text
+  rpm_reported     Int?
+  feed_reported    Int?
+  diameter_reported Decimal? @db.Decimal(6, 1)
+  auto_diagnosis   String?   @db.Text
+  probable_cause   String?   @db.Text
+  recommended_fix  String?   @db.Text
+  prevention       String?   @db.Text
+  evds_solution    String?   @db.Text
+  resolved_by      String?
+  status           SatStatus @default(OPEN)
+  photo_urls       String[]
+  created_at       DateTime  @default(now())
+  resolved_at      DateTime?
 
-  user User @relation(fields: [userId], references: [id])
+  activation DiscActivation @relation(fields: [activation_id], references: [id])
 
   @@map("sat_tickets")
 }
 
-// ─── 11. cost_configs ────────────────────────────────────────────────────────
+// ─── 11. cost_configs ─────────────────────────────────────────────────────────
 
 model CostConfig {
-  id             String   @id @default(uuid())
-  discPriceCur   String   @default("EUR") @map("disc_price_cur")
-  discPrice      Float    @map("disc_price")
-  machineHourRate Float   @map("machine_hour_rate")
-  laborHourRate  Float    @map("labor_hour_rate")
-  effectiveFrom  DateTime @map("effective_from")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id                 String   @id @default(uuid())
+  company_id         String   @unique
+  machine_cost_hour  Decimal  @db.Decimal(10, 2)
+  labor_cost_hour    Decimal  @db.Decimal(10, 2)
+  energy_cost_kwh    Decimal  @db.Decimal(10, 4)
+  default_disc_price Decimal  @db.Decimal(10, 2)
+  downtime_pct       Decimal  @default(10) @db.Decimal(5, 2)
+  waste_pct          Decimal  @default(5) @db.Decimal(5, 2)
+  updated_at         DateTime @updatedAt
 
-  calculations CostCalculation[]
+  company Company @relation(fields: [company_id], references: [id])
 
   @@map("cost_configs")
 }
 
-// ─── 12. cost_calculations ───────────────────────────────────────────────────
+// ─── 12. cost_calculations ────────────────────────────────────────────────────
 
 model CostCalculation {
-  id             String   @id @default(uuid())
-  userId         String   @map("user_id")
-  activationId   String   @map("activation_id")
-  configId       String   @map("config_id")
-  squareMeters   Float    @map("square_meters")
-  costPerSqm     Float    @map("cost_per_sqm")
-  totalCost      Float    @map("total_cost")
-  calculatedAt   DateTime @default(now()) @map("calculated_at")
+  id              String      @id @default(uuid())
+  company_id      String
+  activation_id   String?
+  input_method    InputMethod
+  piece_count     Int
+  total_perimeter Decimal     @db.Decimal(10, 2)
+  result_json     Json
+  created_at      DateTime    @default(now())
 
-  user       User           @relation(fields: [userId], references: [id])
-  activation DiscActivation @relation(fields: [activationId], references: [id])
-  config     CostConfig     @relation(fields: [configId], references: [id])
+  company Company @relation(fields: [company_id], references: [id])
 
   @@map("cost_calculations")
 }
 
-// ─── 13. activation_attempts ─────────────────────────────────────────────────
+// ─── 13. activation_attempts ──────────────────────────────────────────────────
 
 model ActivationAttempt {
-  id         String   @id @default(uuid())
-  labelId    String?  @map("label_id")
-  userId     String?  @map("user_id")
-  ipAddress  String?  @map("ip_address")
-  codeUsed   String   @map("code_used")
-  success    Boolean
-  failReason String?  @map("fail_reason")
-  attemptedAt DateTime @default(now()) @map("attempted_at")
+  id          String        @id @default(uuid())
+  unique_code String        @db.VarChar(8)
+  label_id    String?
+  tried_by    String?
+  company_id  String?
+  ip_address  String        @db.VarChar(45)
+  result      AttemptResult
+  created_at  DateTime      @default(now())
 
-  label DiscLabel? @relation(fields: [labelId], references: [id])
-  user  User?      @relation(fields: [userId], references: [id])
+  label   DiscLabel? @relation(fields: [label_id], references: [id])
+  company Company?   @relation(fields: [company_id], references: [id])
 
   @@map("activation_attempts")
 }
 
-// ─── 14. email_tokens ────────────────────────────────────────────────────────
+// ─── 14. email_tokens ─────────────────────────────────────────────────────────
 
 model EmailToken {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  token     String   @unique
-  type      String
-  expiresAt DateTime @map("expires_at")
-  usedAt    DateTime? @map("used_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String    @id @default(uuid())
+  user_id    String
+  token      String    @unique @db.VarChar(255)
+  type       TokenType
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [user_id], references: [id])
 
   @@map("email_tokens")
 }
 
-// ─── 15. audit_logs ──────────────────────────────────────────────────────────
+// ─── 15. audit_logs ───────────────────────────────────────────────────────────
 
 model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?  @map("user_id")
-  action     String
-  entity     String
-  entityId   String?  @map("entity_id")
-  oldValues  Json?    @map("old_values")
-  newValues  Json?    @map("new_values")
-  ipAddress  String?  @map("ip_address")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  actor_id    String
+  entity_type String   @db.VarChar(50)
+  entity_id   String
+  action      String   @db.VarChar(100)
+  old_value   Json?
+  new_value   Json?
+  created_at  DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id])
+  actor User @relation(fields: [actor_id], references: [id])
 
   @@map("audit_logs")
 }
