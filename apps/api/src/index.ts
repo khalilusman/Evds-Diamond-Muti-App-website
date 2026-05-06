@@ -25,13 +25,20 @@ const app = express()
 const PORT = process.env.PORT ?? 3000
 
 // ─── Security ─────────────────────────────────────────────────────────────────
-app.use(helmet())
 app.use(cors({
   origin: [
-    process.env.FRONTEND_NEXUS_URL ?? 'http://localhost:5173',
-    process.env.FRONTEND_DASHBOARD_URL ?? 'http://localhost:5174',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://nexus.evdsdiamond.com',
+    'https://dashboard.evdsdiamond.com',
   ],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],
+}))
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false,
 }))
 
 // ─── Body parsing ─────────────────────────────────────────────────────────────
