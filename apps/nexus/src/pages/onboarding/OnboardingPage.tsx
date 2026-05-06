@@ -78,7 +78,7 @@ export default function OnboardingPage() {
     setLoading(true)
     try {
       await api.post('/api/machines', { name: machineName.trim() })
-      await api.post('/api/cost/config', {
+      await api.post('/api/cost/configs', {
         machine_cost_hour: parseFloat(costForm.machine_cost_hour),
         labor_cost_hour: parseFloat(costForm.labor_cost_hour),
         energy_cost_kwh: parseFloat(costForm.energy_cost_kwh),

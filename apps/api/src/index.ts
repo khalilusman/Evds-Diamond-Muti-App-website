@@ -26,12 +26,20 @@ const PORT = process.env.PORT ?? 3000
 
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://nexus.evdsdiamond.com',
-    'https://dashboard.evdsdiamond.com',
-  ],
+  origin: (origin, callback) => {
+    const allowed = [
+      'https://nexus.evdsdiamond.com',
+      'https://dashboard.evdsdiamond.com',
+    ]
+    // Allow any localhost port in development
+    if (!origin || 
+        origin.startsWith('http://localhost:') || 
+        allowed.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],

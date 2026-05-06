@@ -53,6 +53,49 @@ export async function upsertConfig(req: Request, res: Response, next: NextFuncti
   }
 }
 
+// POST /api/cost/configs  (create or update — both CUSTOMER_ADMIN and CUSTOMER_USER)
+export async function createOrUpdateConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user!.companyId
+    if (!companyId) {
+      res.status(400).json({ error: 'NO_COMPANY', message: 'No company associated with this account' })
+      return
+    }
+
+    const { machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price, downtime_pct, waste_pct } = req.body
+
+    if (machine_cost_hour === undefined || labor_cost_hour === undefined || energy_cost_kwh === undefined || default_disc_price === undefined) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price are required' })
+      return
+    }
+
+    const config = await prisma.costConfig.upsert({
+      where: { company_id: companyId },
+      update: {
+        machine_cost_hour: Number(machine_cost_hour),
+        labor_cost_hour: Number(labor_cost_hour),
+        energy_cost_kwh: Number(energy_cost_kwh),
+        default_disc_price: Number(default_disc_price),
+        downtime_pct: downtime_pct !== undefined ? Number(downtime_pct) : undefined,
+        waste_pct: waste_pct !== undefined ? Number(waste_pct) : undefined,
+      },
+      create: {
+        company_id: companyId,
+        machine_cost_hour: Number(machine_cost_hour),
+        labor_cost_hour: Number(labor_cost_hour),
+        energy_cost_kwh: Number(energy_cost_kwh),
+        default_disc_price: Number(default_disc_price),
+        downtime_pct: downtime_pct !== undefined ? Number(downtime_pct) : 10,
+        waste_pct: waste_pct !== undefined ? Number(waste_pct) : 5,
+      },
+    })
+
+    res.status(200).json({ data: config })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // POST /api/cost/calculate
 export async function calculate(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
