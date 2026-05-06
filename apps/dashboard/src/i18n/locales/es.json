@@ -1,0 +1,134 @@
+{
+  "translation": {
+    "common": {
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "loading": "Cargando...",
+      "error": "Error",
+      "success": "Éxito",
+      "logout": "Cerrar sesión",
+      "settings": "Configuración",
+      "search": "Buscar",
+      "filter": "Filtrar",
+      "export": "Exportar",
+      "download": "Descargar",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "create": "Crear",
+      "view": "Ver",
+      "close": "Cerrar",
+      "yes": "Sí",
+      "no": "No"
+    },
+    "auth": {
+      "login": "Iniciar sesión",
+      "logout": "Cerrar sesión",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "login_title": "Portal del Personal EVDS",
+      "login_subtitle": "Inicie sesión con su cuenta de personal"
+    },
+    "nav": {
+      "dashboard": "Panel",
+      "companies": "Empresas",
+      "users": "Usuarios",
+      "labels": "Etiquetas",
+      "catalog": "Catálogo",
+      "sat": "Tickets SAT",
+      "analytics": "Analíticas",
+      "profile": "Perfil"
+    },
+    "dashboard": {
+      "title": "Panel",
+      "total_companies": "Total de empresas",
+      "active_activations": "Activaciones activas",
+      "open_tickets": "Tickets SAT abiertos",
+      "labels_generated": "Etiquetas generadas",
+      "recent_registrations": "Registros recientes",
+      "pending_approvals": "Aprobaciones pendientes",
+      "approve": "Aprobar",
+      "reject": "Rechazar"
+    },
+    "companies": {
+      "title": "Empresas",
+      "name": "Nombre de empresa",
+      "contact": "Contacto",
+      "country": "País",
+      "status": "Estado",
+      "created": "Creado",
+      "active": "Activo",
+      "pending": "Pendiente",
+      "suspended": "Suspendido",
+      "approve": "Aprobar",
+      "suspend": "Suspender",
+      "activate": "Activar",
+      "view_details": "Ver detalles",
+      "no_companies": "No se encontraron empresas"
+    },
+    "labels": {
+      "title": "Gestión de etiquetas",
+      "generate": "Generar etiquetas",
+      "family": "Familia de discos",
+      "quantity": "Cantidad",
+      "lot_number": "Número de lote",
+      "generated_at": "Generado",
+      "download_pdf": "Descargar PDF",
+      "no_labels": "No hay lotes de etiquetas",
+      "select_family": "Seleccionar familia de discos"
+    },
+    "catalog": {
+      "title": "Catálogo de discos",
+      "family": "Familia",
+      "diameter": "Diámetro (mm)",
+      "segment_height": "Altura de segmento (mm)",
+      "recommended_rpm": "RPM rec.",
+      "recommended_feed": "Avance rec.",
+      "expected_life": "Vida útil esperada (m)",
+      "no_catalog": "No hay entradas en el catálogo"
+    },
+    "sat": {
+      "title": "Tickets SAT",
+      "ticket_id": "ID de ticket",
+      "company": "Empresa",
+      "symptom": "Síntoma",
+      "status": "Estado",
+      "created": "Creado",
+      "status_open": "Abierto",
+      "status_resolved": "Resuelto",
+      "status_escalated": "Escalado",
+      "resolve": "Marcar como resuelto",
+      "no_tickets": "No hay tickets de soporte",
+      "diagnosis": "Diagnóstico automático",
+      "probable_cause": "Causa probable",
+      "recommended_fix": "Solución recomendada"
+    },
+    "analytics": {
+      "title": "Analíticas",
+      "activations_over_time": "Activaciones a lo largo del tiempo",
+      "top_materials": "Principales materiales",
+      "wear_distribution": "Distribución de desgaste",
+      "tickets_by_symptom": "Tickets por síntoma",
+      "no_data": "No hay datos disponibles"
+    },
+    "profile": {
+      "title": "Perfil",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "role": "Rol",
+      "change_password": "Cambiar contraseña",
+      "current_password": "Contraseña actual",
+      "new_password": "Nueva contraseña",
+      "update": "Actualizar"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Por favor inténtelo de nuevo.",
+      "network": "Error de red. Compruebe su conexión.",
+      "unauthorized": "Por favor inicie sesión para continuar.",
+      "forbidden": "No tiene permiso para hacer esto.",
+      "not_found": "El recurso solicitado no fue encontrado."
+    }
+  }
+}

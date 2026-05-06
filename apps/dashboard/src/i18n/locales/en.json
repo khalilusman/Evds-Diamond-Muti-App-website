@@ -1,0 +1,134 @@
+{
+  "translation": {
+    "common": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "back": "Back",
+      "next": "Next",
+      "loading": "Loading...",
+      "error": "Error",
+      "success": "Success",
+      "logout": "Logout",
+      "settings": "Settings",
+      "search": "Search",
+      "filter": "Filter",
+      "export": "Export",
+      "download": "Download",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "view": "View",
+      "close": "Close",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "auth": {
+      "login": "Login",
+      "logout": "Logout",
+      "email": "Email",
+      "password": "Password",
+      "login_title": "EVDS Staff Portal",
+      "login_subtitle": "Sign in with your staff account"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "companies": "Companies",
+      "users": "Users",
+      "labels": "Labels",
+      "catalog": "Catalog",
+      "sat": "SAT Tickets",
+      "analytics": "Analytics",
+      "profile": "Profile"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "total_companies": "Total Companies",
+      "active_activations": "Active Activations",
+      "open_tickets": "Open SAT Tickets",
+      "labels_generated": "Labels Generated",
+      "recent_registrations": "Recent Registrations",
+      "pending_approvals": "Pending Approvals",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "companies": {
+      "title": "Companies",
+      "name": "Company Name",
+      "contact": "Contact",
+      "country": "Country",
+      "status": "Status",
+      "created": "Created",
+      "active": "Active",
+      "pending": "Pending",
+      "suspended": "Suspended",
+      "approve": "Approve",
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "view_details": "View Details",
+      "no_companies": "No companies found"
+    },
+    "labels": {
+      "title": "Label Management",
+      "generate": "Generate Labels",
+      "family": "Disc Family",
+      "quantity": "Quantity",
+      "lot_number": "Lot Number",
+      "generated_at": "Generated",
+      "download_pdf": "Download PDF",
+      "no_labels": "No label batches",
+      "select_family": "Select disc family"
+    },
+    "catalog": {
+      "title": "Disc Catalog",
+      "family": "Family",
+      "diameter": "Diameter (mm)",
+      "segment_height": "Segment Height (mm)",
+      "recommended_rpm": "Rec. RPM",
+      "recommended_feed": "Rec. Feed",
+      "expected_life": "Expected Life (m)",
+      "no_catalog": "No catalog entries"
+    },
+    "sat": {
+      "title": "SAT Tickets",
+      "ticket_id": "Ticket ID",
+      "company": "Company",
+      "symptom": "Symptom",
+      "status": "Status",
+      "created": "Created",
+      "status_open": "Open",
+      "status_resolved": "Resolved",
+      "status_escalated": "Escalated",
+      "resolve": "Mark Resolved",
+      "no_tickets": "No support tickets",
+      "diagnosis": "Auto Diagnosis",
+      "probable_cause": "Probable Cause",
+      "recommended_fix": "Recommended Fix"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "activations_over_time": "Activations Over Time",
+      "top_materials": "Top Materials",
+      "wear_distribution": "Wear Distribution",
+      "tickets_by_symptom": "Tickets by Symptom",
+      "no_data": "No data available"
+    },
+    "profile": {
+      "title": "Profile",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "change_password": "Change Password",
+      "current_password": "Current Password",
+      "new_password": "New Password",
+      "update": "Update"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Check your connection.",
+      "unauthorized": "Please log in to continue.",
+      "forbidden": "You do not have permission to do this.",
+      "not_found": "The requested resource was not found."
+    }
+  }
+}
