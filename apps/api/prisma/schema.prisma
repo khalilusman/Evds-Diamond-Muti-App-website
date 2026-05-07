@@ -122,8 +122,9 @@ model Machine {
   is_active  Boolean  @default(true)
   created_at DateTime @default(now())
 
-  company    Company    @relation(fields: [company_id], references: [id])
-  usage_logs UsageLog[]
+  company     Company          @relation(fields: [company_id], references: [id])
+  usage_logs  UsageLog[]
+  activations DiscActivation[]
 
   @@map("machines")
 }
@@ -215,6 +216,7 @@ model DiscActivation {
   machine_id            String
   diameter_at_activation Decimal         @db.Decimal(6, 1)
   thickness_cm          Int
+  material_group        String?          @db.VarChar(100)
   activation_window     Int              @default(1)
   activated_at          DateTime         @default(now())
   expires_at            DateTime
@@ -222,9 +224,10 @@ model DiscActivation {
   status                ActivationStatus @default(ACTIVE)
   notes                 String?          @db.Text
 
-  label      DiscLabel    @relation(fields: [label_id], references: [id])
-  company    Company      @relation(fields: [company_id], references: [id])
-  usage_logs UsageLog[]
+  label       DiscLabel    @relation(fields: [label_id], references: [id])
+  company     Company      @relation(fields: [company_id], references: [id])
+  machine     Machine      @relation(fields: [machine_id], references: [id])
+  usage_logs  UsageLog[]
   sat_tickets SatTicket[]
 
   @@map("disc_activations")

@@ -101,6 +101,7 @@ export async function createActivation(req: Request, res: Response, next: NextFu
           machine_id,
           diameter_at_activation: dia,
           thickness_cm: thick,
+          material_group: material_group ?? null,
           activation_window: activationWindow,
           activated_at: now,
           expires_at: expiresAt,
@@ -171,6 +172,7 @@ export async function listActivations(req: Request, res: Response, next: NextFun
         include: {
           label: { include: { family: true } },
           company: { select: { id: true, name: true } },
+          machine: { select: { id: true, name: true } },
         },
       }),
       prisma.discActivation.count({ where }),
