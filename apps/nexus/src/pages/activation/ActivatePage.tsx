@@ -423,7 +423,7 @@ function Step2({
           />
           {wear && (
             <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs text-gray-500 dark:text-gray-400">
-              New disc: ~{wear.new_diameter}mm &nbsp;|&nbsp; Worn: ~{wear.worn_diameter}mm
+              New disc: ~{wear.measured_new}mm &nbsp;|&nbsp; Worn: ~{wear.measured_worn}mm
               <br />
               {t('activation.diameter_hint')}
             </div>
@@ -611,8 +611,8 @@ function Step3({
             Wear Reference
           </p>
           <div className="flex justify-between text-gray-700 dark:text-gray-300">
-            <span>New: {wear.new_diameter}mm</span>
-            <span>Worn: {wear.worn_diameter}mm</span>
+            <span>New: {wear.measured_new}mm</span>
+            <span>Worn: {wear.measured_worn}mm</span>
           </div>
         </div>
       )}

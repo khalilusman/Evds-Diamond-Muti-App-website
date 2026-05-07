@@ -191,7 +191,7 @@ export async function listActivations(req: Request, res: Response, next: NextFun
         })
         const currentDia = latestLog ? Number(latestLog.current_diameter) : Number(a.diameter_at_activation)
         const wearPct = wearRef ? calcWear(wearRef.measured_new, wearRef.measured_worn, currentDia) : null
-        return { ...a, current_diameter: currentDia, wear_pct: wearPct }
+        return { ...a, current_diameter: currentDia, wear_pct: wearPct, wear_reference: wearRef }
       })
     )
 

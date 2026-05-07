@@ -16,16 +16,16 @@ export interface LabelLookup {
 
 export interface Activation {
   id: string
-  unique_code: string
-  full_code: string
   status: string
   diameter_at_activation: number
   thickness_cm: number
-  material_group: string
-  notes?: string
+  material_group?: string | null
+  activation_window: number
+  notes?: string | null
   expires_at: string
+  expired_at?: string | null
   activated_at: string
-  machine: { id: string; name: string }
+  machine?: { id: string; name: string } | null
   label: {
     unique_code: string
     full_code: string
@@ -33,17 +33,12 @@ export interface Activation {
     nominal_diameter: number
     family: { id: string; name: string }
   }
-  catalog?: {
-    recommended_rpm: number
-    feed_2cm: number
-    life_2cm: number
-    feed_3cm: number
-    life_3cm: number
-  }
+  current_diameter?: number
+  wear_pct?: number | null
   wear_reference?: {
-    new_diameter: number
-    worn_diameter: number
-  }
+    measured_new: number
+    measured_worn: number
+  } | null
 }
 
 export interface CreateActivationData {

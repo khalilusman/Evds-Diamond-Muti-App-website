@@ -25,8 +25,8 @@ export interface WearReference {
   id: string
   family_id: string
   nominal_diameter: number
-  new_diameter: number
-  worn_diameter: number
+  measured_new: number
+  measured_worn: number
   family?: DiscFamily
 }
 
