@@ -13,7 +13,7 @@ import MyDiscsPage from '../pages/discs/MyDiscsPage'
 import ActivatePage from '../pages/activation/ActivatePage'
 import UsagePage from '../pages/usage/UsagePage'
 import SatPage from '../pages/sat/SatPage'
-import CostPage from '../pages/CostPage'
+import CostPage from '../pages/cost/CostPage'
 import MachinesPage from '../pages/machines/MachinesPage'
 import ProfilePage from '../pages/ProfilePage'
 
