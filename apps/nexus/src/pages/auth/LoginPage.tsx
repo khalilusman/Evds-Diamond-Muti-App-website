@@ -37,7 +37,7 @@ export default function LoginPage() {
 
       if (user.company?.status === 'PENDING') {
         navigate('/pending')
-      } else if (!user.company?.onboarding_complete) {
+      } else if (user.role === 'CUSTOMER_ADMIN' && !user.company?.onboarding_complete) {
         navigate('/onboarding')
       } else {
         navigate('/')

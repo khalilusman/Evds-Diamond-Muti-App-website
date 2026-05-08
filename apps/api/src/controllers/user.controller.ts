@@ -13,6 +13,72 @@ const SAFE_SELECT = {
   updated_at: true,
 }
 
+// PATCH /api/users/me/email  (any authenticated user)
+export async function updateMyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email } = req.body
+    if (!email || typeof email !== 'string') {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'email is required' })
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'Invalid email format' })
+      return
+    }
+
+    const conflict = await prisma.user.findUnique({ where: { email } })
+    if (conflict && conflict.id !== req.user!.userId) {
+      res.status(409).json({ error: 'EMAIL_TAKEN', message: 'Email already in use' })
+      return
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { email },
+      select: SAFE_SELECT,
+    })
+
+    res.json({ data: updated })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// PATCH /api/users/me/password  (any authenticated user)
+export async function updateMyPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { current_password, new_password } = req.body
+    if (!current_password || !new_password) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'current_password and new_password are required' })
+      return
+    }
+    if (new_password.length < 8) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'New password must be at least 8 characters' })
+      return
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } })
+    if (!user) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'User not found' })
+      return
+    }
+
+    const valid = await bcrypt.compare(current_password, user.password_hash)
+    if (!valid) {
+      res.status(401).json({ error: 'WRONG_PASSWORD', message: 'Current password is incorrect' })
+      return
+    }
+
+    const password_hash = await bcrypt.hash(new_password, 12)
+    await prisma.user.update({ where: { id: user.id }, data: { password_hash } })
+
+    res.json({ message: 'Password updated successfully' })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // POST /api/users  (CUSTOMER_ADMIN)
 export async function createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

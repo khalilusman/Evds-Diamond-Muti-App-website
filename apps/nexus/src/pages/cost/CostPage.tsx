@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import AppLayout from '../../layouts/AppLayout'
+import { Link } from 'react-router-dom'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -199,7 +200,7 @@ export default function CostPage() {
     queryFn: getCostConfig,
   })
 
-  const { data: activations = [] } = useQuery({
+  const { data: activations = [], isLoading: activationsLoading } = useQuery({
     queryKey: ['activations', 'active'],
     queryFn: () => getActivations('ACTIVE'),
   })
@@ -208,6 +209,12 @@ export default function CostPage() {
     queryKey: ['cost-calculations'],
     queryFn: getCalculations,
   })
+
+  useEffect(() => {
+    if (activations.length > 0 && !form.activation_id) {
+      setForm((f) => ({ ...f, activation_id: activations[0].id }))
+    }
+  }, [activations])
 
   // Auto-fill disc price from config when config loads
   const discPriceDefault = costConfig?.default_disc_price?.toString() ?? ''
@@ -303,6 +310,40 @@ export default function CostPage() {
     setResult(calc.result_json)
   }
 
+  // ── Loading state ──
+  if (activationsLoading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center py-20">
+          <LoadingSpinner size="lg" className="text-blue-600" />
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // ── No active disc gate ──
+  if (activations.length === 0) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center mt-16 text-center px-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 max-w-md w-full space-y-4">
+            <div className="text-6xl">🧮</div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              No Active Disc
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              The cost calculator requires an active disc. Activate a disc first
+              to use the cost calculator with the correct disc parameters.
+            </p>
+            <Link to="/activate">
+              <Button fullWidth>Activate a Disc</Button>
+            </Link>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
   // ── Result view ──
   if (result) {
     return (
@@ -330,26 +371,25 @@ export default function CostPage() {
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 space-y-6">
 
-          {/* 1 — Optional disc selector */}
-          {activations.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Active Disc (optional — fills catalog parameters)
-              </label>
-              <select
-                value={form.activation_id}
-                onChange={(e) => setForm((f) => ({ ...f, activation_id: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              >
-                <option value="">— No disc selected —</option>
-                {activations.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.label?.unique_code} · {a.machine?.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* 1 — Disc selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Active Disc
+            </label>
+            <select
+              title="Active Disc"
+              value={form.activation_id}
+              onChange={(e) => setForm((f) => ({ ...f, activation_id: e.target.value }))}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            >
+              <option value="">— No disc selected —</option>
+              {activations.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.label?.unique_code} · {a.machine?.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* 2 — Input method toggle */}
           <div>

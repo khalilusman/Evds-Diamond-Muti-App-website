@@ -25,7 +25,7 @@ interface CostErrors {
 export default function OnboardingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, updateUser } = useAuthStore()
+  useAuthStore()
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -96,14 +96,23 @@ export default function OnboardingPage() {
     setLoading(true)
     try {
       await api.patch('/api/companies/me', { onboarding_complete: true })
-      if (user) {
-        updateUser({
-          ...user,
-          company: user.company
-            ? { ...user.company, onboarding_complete: true }
-            : undefined,
-        })
-      }
+      const { data } = await api.get('/api/auth/me')
+      const u = data.data
+      const token = localStorage.getItem('evds_token') ?? ''
+      useAuthStore.getState().setAuth(token, {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        company: u.company
+          ? {
+              id: u.company.id,
+              name: u.company.name,
+              status: u.company.status,
+              onboarding_complete: u.company.onboarding_complete,
+            }
+          : undefined,
+      })
       navigate('/my-discs')
     } catch {
       toast.error(t('errors.generic'))

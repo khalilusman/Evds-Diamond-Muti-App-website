@@ -24,10 +24,18 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
   if (user?.company?.status === 'PENDING') return <Navigate to="/pending" replace />
 
-  if (user?.company && !user.company.onboarding_complete) {
+  if (user?.role === 'CUSTOMER_ADMIN' && user?.company && !user.company.onboarding_complete) {
     return <Navigate to="/onboarding" replace />
   }
 
+  return <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore()
+  if (user?.role !== 'CUSTOMER_ADMIN') {
+    return <Navigate to="/my-discs" replace />
+  }
   return <>{children}</>
 }
 
@@ -95,7 +103,9 @@ export default function AppRouter() {
         path="/activate"
         element={
           <RequireAuth>
-            <ActivatePage />
+            <AdminRoute>
+              <ActivatePage />
+            </AdminRoute>
           </RequireAuth>
         }
       />
@@ -127,7 +137,9 @@ export default function AppRouter() {
         path="/machines"
         element={
           <RequireAuth>
-            <MachinesPage />
+            <AdminRoute>
+              <MachinesPage />
+            </AdminRoute>
           </RequireAuth>
         }
       />

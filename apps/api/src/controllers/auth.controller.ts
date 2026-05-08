@@ -120,7 +120,12 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
           email: user.email,
           role: user.role,
           company: user.company
-            ? { id: user.company.id, name: user.company.name, status: user.company.status }
+            ? {
+                id: user.company.id,
+                name: user.company.name,
+                status: user.company.status,
+                onboarding_complete: user.company.onboarding_complete,
+              }
             : null,
         },
       },
@@ -175,6 +180,36 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
     await sendPasswordReset(email, resetLink)
   } catch (err) {
     console.error('[FORGOT PASSWORD ERROR]', (err as Error).message)
+  }
+}
+
+// PATCH /api/auth/change-password
+export async function changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { current_password, new_password } = req.body
+    if (!current_password || !new_password) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'current_password and new_password are required' })
+      return
+    }
+    if (new_password.length < 8) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'Password must be at least 8 characters' })
+      return
+    }
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } })
+    if (!user) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'User not found' })
+      return
+    }
+    const valid = await bcrypt.compare(current_password, user.password_hash)
+    if (!valid) {
+      res.status(401).json({ error: 'WRONG_PASSWORD', message: 'Current password is incorrect' })
+      return
+    }
+    const password_hash = await bcrypt.hash(new_password, 12)
+    await prisma.user.update({ where: { id: user.id }, data: { password_hash } })
+    res.json({ message: 'Password changed' })
+  } catch (err) {
+    next(err)
   }
 }
 

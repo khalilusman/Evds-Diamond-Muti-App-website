@@ -6,6 +6,12 @@ import * as ctrl from '../controllers/user.controller'
 const router = Router()
 
 router.use(authenticate)
+
+// Self-service routes — any authenticated role
+router.patch('/me/email', ctrl.updateMyEmail)
+router.patch('/me/password', ctrl.updateMyPassword)
+
+// Company admin routes
 router.use(requireRole('CUSTOMER_ADMIN'))
 
 router.post('/', ctrl.createUser)

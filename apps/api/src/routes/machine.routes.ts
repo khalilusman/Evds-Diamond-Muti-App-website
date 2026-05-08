@@ -9,6 +9,7 @@ router.use(authenticate)
 
 router.post('/', requireRole('CUSTOMER_ADMIN'), ctrl.createMachine)
 router.get('/', requireRole('CUSTOMER_ADMIN', 'CUSTOMER_USER'), ctrl.listMachines)
+router.get('/:id/activations', requireRole('CUSTOMER_ADMIN', 'CUSTOMER_USER'), ctrl.listMachineActivations)
 router.patch('/:id', requireRole('CUSTOMER_ADMIN'), ctrl.updateMachine)
 router.delete('/:id', requireRole('CUSTOMER_ADMIN'), ctrl.deleteMachine)
 

@@ -29,24 +29,40 @@ export async function listMachines(req: Request, res: Response, next: NextFuncti
   try {
     const machines = await prisma.machine.findMany({
       where: { company_id: req.user!.companyId!, is_active: true },
-      orderBy: { name: 'asc' },
+      orderBy: { created_at: 'desc' },
       include: {
-        _count: { select: { usage_logs: true } },
+        _count: {
+          select: { activations: { where: { status: 'ACTIVE' } } },
+        },
       },
     })
 
-    // attach active activation count per machine
-    const machineIds = machines.map((m) => m.id)
-    const activeActivations = await prisma.discActivation.groupBy({
-      by: ['machine_id'],
-      where: { machine_id: { in: machineIds }, status: 'ACTIVE' },
-      _count: { machine_id: true },
-    })
-    const activeMap = Object.fromEntries(activeActivations.map((a) => [a.machine_id, a._count.machine_id]))
-
-    const result = machines.map((m) => ({ ...m, active_activations: activeMap[m.id] ?? 0 }))
+    const result = machines.map((m) => ({ ...m, active_disc_count: m._count.activations }))
 
     res.json({ data: result, total: result.length })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// GET /api/machines/:id/activations
+export async function listMachineActivations(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const machine = await prisma.machine.findUnique({ where: { id: req.params.id } })
+    if (!machine || machine.company_id !== req.user!.companyId) {
+      res.status(403).json({ error: 'FORBIDDEN', message: 'Machine not found in your company' })
+      return
+    }
+
+    const activations = await prisma.discActivation.findMany({
+      where: { machine_id: req.params.id, status: 'ACTIVE' },
+      orderBy: { activated_at: 'desc' },
+      include: {
+        label: { include: { family: true } },
+      },
+    })
+
+    res.json({ data: activations })
   } catch (err) {
     next(err)
   }

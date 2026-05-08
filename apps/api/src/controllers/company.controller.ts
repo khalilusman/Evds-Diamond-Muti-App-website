@@ -166,15 +166,18 @@ export async function updateMyCompany(req: Request, res: Response, next: NextFun
       return
     }
 
-    const { name, contact_name, language } = req.body
-    const data: Record<string, unknown> = {}
-    if (name) data.name = name
-    if (contact_name) data.contact_name = contact_name
-    if (language) data.language = language
+    const body = req.body
+    const allowed: Record<string, unknown> = {
+      name: body.name,
+      contact_name: body.contact_name,
+      language: body.language,
+      onboarding_complete: body.onboarding_complete,
+    }
+    Object.keys(allowed).forEach((k) => { if (allowed[k] === undefined) delete allowed[k] })
 
     const updated = await prisma.company.update({
       where: { id: req.user.companyId },
-      data,
+      data: allowed,
     })
 
     res.json({ data: updated })

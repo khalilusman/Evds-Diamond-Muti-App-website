@@ -6,7 +6,15 @@ import AppLayout from '../../layouts/AppLayout'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { getMachines, createMachine, renameMachine, deleteMachine, Machine } from '../../api/machines.api'
+import {
+  getMachines,
+  getMachineActivations,
+  createMachine,
+  renameMachine,
+  deleteMachine,
+  Machine,
+  MachineActivation,
+} from '../../api/machines.api'
 
 interface ModalState {
   type: 'add' | 'rename' | 'delete' | null
@@ -19,6 +27,7 @@ export default function MachinesPage() {
   const [modal, setModal] = useState<ModalState>({ type: null })
   const [inputName, setInputName] = useState('')
   const [inputError, setInputError] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const { data: machines = [], isLoading } = useQuery({
     queryKey: ['machines'],
@@ -104,8 +113,6 @@ export default function MachinesPage() {
     deleteMut.mutate(modal.machine!.id)
   }
 
-  const activeCount = (m: Machine) => m._count?.activations ?? 0
-
   return (
     <AppLayout>
       {/* Header */}
@@ -135,8 +142,10 @@ export default function MachinesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {machines.map((machine) => {
-            const active = activeCount(machine)
+            const active = machine.active_disc_count ?? 0
             const canDelete = active === 0
+            const isExpanded = expandedId === machine.id
+
             return (
               <div
                 key={machine.id}
@@ -163,6 +172,18 @@ export default function MachinesPage() {
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   {new Date(machine.created_at).toLocaleDateString()}
                 </p>
+
+                {active > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isExpanded ? null : machine.id)}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline text-left w-full"
+                  >
+                    {isExpanded ? '▾ Hide Discs' : '▸ View Discs'}
+                  </button>
+                )}
+
+                {isExpanded && <MachineDiscList machineId={machine.id} />}
 
                 <div className="flex gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
                   <Button
@@ -245,6 +266,54 @@ export default function MachinesPage() {
         </ModalOverlay>
       )}
     </AppLayout>
+  )
+}
+
+function MachineDiscList({ machineId }: { machineId: string }) {
+  const { data: activations = [], isLoading } = useQuery({
+    queryKey: ['machine-activations', machineId],
+    queryFn: () => getMachineActivations(machineId),
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-3">
+        <LoadingSpinner size="sm" className="text-blue-600" />
+      </div>
+    )
+  }
+
+  if (activations.length === 0) {
+    return (
+      <p className="text-xs text-gray-400 dark:text-gray-500 py-1">No active discs found.</p>
+    )
+  }
+
+  return (
+    <div className="space-y-0">
+      {activations.map((a: MachineActivation) => (
+        <div
+          key={a.id}
+          className="py-2 border-t border-gray-100 dark:border-gray-800"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
+              {a.label.unique_code}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Ø {a.diameter_at_activation} mm
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {a.label.family.name} · {a.label.lot_number}
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            Activated {new Date(a.activated_at).toLocaleDateString()} ·{' '}
+            Exp {new Date(a.expires_at).toLocaleDateString()}
+          </p>
+        </div>
+      ))}
+    </div>
   )
 }
 

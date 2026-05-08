@@ -24,7 +24,7 @@ import adminRoutes from './routes/admin.routes'
 const app = express()
 const PORT = process.env.PORT ?? 3000
 
-// ─── Security ─────────────────────────────────────────────────────────────────
+// ─── Security 
 app.use(cors({
   origin: (origin, callback) => {
     const allowed = [
@@ -49,15 +49,15 @@ app.use(helmet({
   crossOriginOpenerPolicy: false,
 }))
 
-// ─── Body parsing ─────────────────────────────────────────────────────────────
+// ─── Body parsing 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(apiLimiter)
 
-// ─── Static uploads ───────────────────────────────────────────────────────────
+// ─── Static uploads 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
-// ─── Health ───────────────────────────────────────────────────────────────────
+// ─── Health 
 app.get('/api/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
@@ -67,7 +67,7 @@ app.get('/api/health', async (_req, res) => {
   }
 })
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// ─── Routes 
 app.use('/api/auth', authRoutes)
 app.use('/api/companies', companyRoutes)
 app.use('/api/users', userRoutes)
@@ -81,15 +81,15 @@ app.use('/api/cost', costRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/admin', adminRoutes)
 
-// ─── 404 ──────────────────────────────────────────────────────────────────────
+// ─── 404 
 app.use((_req, res) => {
   res.status(404).json({ error: 'NOT_FOUND', message: 'Route not found' })
 })
 
-// ─── Global error handler ────────────────────────────────────────────────────
+// ─── Global error handler 
 app.use(errorHandler)
 
-// ─── Start ────────────────────────────────────────────────────────────────────
+// ─── Start 
 app.listen(PORT, () => {
   console.log(`EVDS API running on http://localhost:${PORT}`)
   console.log(`  Environment: ${process.env.NODE_ENV}`)

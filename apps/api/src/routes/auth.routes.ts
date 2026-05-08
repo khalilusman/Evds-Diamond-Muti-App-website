@@ -10,5 +10,6 @@ router.post('/login', authLimiter, ctrl.login)
 router.get('/me', authenticate, ctrl.me)
 router.post('/forgot-password', authLimiter, ctrl.forgotPassword)
 router.post('/reset-password', authLimiter, ctrl.resetPassword)
+router.patch('/change-password', authenticate, ctrl.changePassword)
 
 export default router
