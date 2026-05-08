@@ -76,3 +76,17 @@ export const getCompanyAuditLogs = async (companyId: string): Promise<AuditLog[]
   const { data } = await api.get(`/api/companies/${companyId}/audit-logs`)
   return data.data ?? []
 }
+
+export interface CompanyUser {
+  id: string
+  name: string
+  email: string
+  role: 'CUSTOMER_ADMIN' | 'CUSTOMER_USER'
+  is_active: boolean
+  created_at: string
+}
+
+export const getCompanyUsers = async (companyId: string): Promise<CompanyUser[]> => {
+  const { data } = await api.get('/api/users', { params: { company_id: companyId } })
+  return data.data ?? []
+}

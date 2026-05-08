@@ -12,6 +12,7 @@ interface NavItem {
   icon: string
   labelKey: string
   path: string
+  adminOnly?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -22,11 +23,9 @@ const NAV_ITEMS: NavItem[] = [
   { icon: '🔒', labelKey: 'nav.security',         path: '/security' },
   { icon: '🔧', labelKey: 'nav.sat',              path: '/sat' },
   { icon: '📊', labelKey: 'nav.analytics',        path: '/analytics' },
-  { icon: '👤', labelKey: 'nav.staff',            path: '/staff' },
-  { icon: '📱', labelKey: 'nav.qr',               path: '/qr' },
+  { icon: '👤', labelKey: 'nav.staff',            path: '/staff', adminOnly: true },
+  { icon: '📱', labelKey: 'nav.qr',               path: '/qr',   adminOnly: true },
 ]
-
-const MOBILE_NAV: NavItem[] = NAV_ITEMS.slice(0, 5)
 
 function SidebarNav({ onClose }: { onClose?: () => void }) {
   const { t } = useTranslation()
@@ -40,6 +39,8 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
   })
 
   const notifCount = (summary?.pending_companies ?? 0) + (summary?.open_sat_tickets ?? 0)
+  const isAdmin = user?.role === 'EVDS_ADMIN'
+  const visibleNav = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
 
   function handleLogout() {
     logout()
@@ -51,12 +52,12 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
       {/* Logo */}
       <div className="px-6 py-5 flex items-center gap-3 border-b border-gray-200 dark:border-gray-800">
         <Logo size="md" />
-        <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 tracking-wide">Dashboard</span>
+        <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 tracking-wide">{t('dashboard.sidebar_label')}</span>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
+        {visibleNav.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -82,7 +83,7 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
         {/* Notification hint */}
         {notifCount > 0 && (
           <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-            🔔 {notifCount} item{notifCount !== 1 ? 's' : ''} need attention
+            🔔 {t('dashboard.notif_items', { count: notifCount })}
           </div>
         )}
 
@@ -130,10 +131,14 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const { t } = useTranslation()
+  const { user } = useAuthStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showNotifs, setShowNotifs] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+
+  const isAdmin = user?.role === 'EVDS_ADMIN'
+  const mobileNav = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).slice(0, 5)
 
   const { data: summary } = useQuery({
     queryKey: ['analytics-summary'],
@@ -239,9 +244,9 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                       <span className="text-xl shrink-0">⏳</span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {summary!.pending_companies} {summary!.pending_companies === 1 ? 'company' : 'companies'} pending approval
+                          {t('dashboard.pending_notif', { count: summary!.pending_companies })}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Click to review</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('dashboard.click_review')}</p>
                       </div>
                     </button>
                   )}
@@ -255,9 +260,9 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                       <span className="text-xl shrink-0">🔧</span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {summary!.open_sat_tickets} open SAT {summary!.open_sat_tickets === 1 ? 'ticket' : 'tickets'}
+                          {t('dashboard.sat_notif', { count: summary!.open_sat_tickets })}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Click to review</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('dashboard.click_review')}</p>
                       </div>
                     </button>
                   )}
@@ -271,9 +276,9 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                       <span className="text-xl shrink-0">⚠️</span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {summary!.wear_alerts} wear {summary!.wear_alerts === 1 ? 'alert' : 'alerts'}
+                          {t('dashboard.wear_notif', { count: summary!.wear_alerts })}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Click to view critical discs</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('dashboard.click_view_discs')}</p>
                       </div>
                     </button>
                   )}
@@ -291,7 +296,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex z-30">
-        {MOBILE_NAV.map((item) => (
+        {mobileNav.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

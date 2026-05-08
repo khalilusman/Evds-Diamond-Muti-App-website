@@ -57,7 +57,7 @@ export async function summary(_req: Request, res: Response, next: NextFunction):
     const oldestTicket = await prisma.satTicket.findFirst({
       where: { status: { in: ['OPEN', 'IN_REVIEW'] } },
       orderBy: { created_at: 'asc' },
-      include: { company: { select: { name: true } } },
+      include: { activation: { include: { company: { select: { name: true } } } } },
     })
 
     res.json({
@@ -72,7 +72,7 @@ export async function summary(_req: Request, res: Response, next: NextFunction):
         activation_rate_pct: activationRate,
         first_pending_company: firstPending ?? null,
         oldest_open_ticket: oldestTicket
-          ? { id: oldestTicket.id, symptom_code: oldestTicket.symptom_code, company_name: oldestTicket.company.name, created_at: oldestTicket.created_at.toISOString() }
+          ? { id: oldestTicket.id, symptom_code: oldestTicket.symptom_code, company_name: oldestTicket.activation.company.name, created_at: oldestTicket.created_at.toISOString() }
           : null,
       },
     })

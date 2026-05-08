@@ -11,11 +11,13 @@ router.use(authenticate)
 router.patch('/me/email', ctrl.updateMyEmail)
 router.patch('/me/password', ctrl.updateMyPassword)
 
-// Company admin routes
+// List users — CUSTOMER_ADMIN (own company) or EVDS staff (by ?company_id=)
+router.get('/', requireRole('CUSTOMER_ADMIN', 'EVDS_ADMIN', 'EVDS_SUPPORT'), ctrl.listUsers)
+
+// Mutation routes — CUSTOMER_ADMIN only
 router.use(requireRole('CUSTOMER_ADMIN'))
 
 router.post('/', ctrl.createUser)
-router.get('/', ctrl.listUsers)
 router.patch('/:id', ctrl.updateUser)
 router.delete('/:id', ctrl.deactivateUser)
 

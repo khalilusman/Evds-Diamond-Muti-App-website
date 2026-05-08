@@ -189,6 +189,7 @@
       "prevention": "الوقاية",
       "escalate": "التصعيد إلى دعم EVDS",
       "status_open": "مفتوح",
+      "status_in_review": "قيد المراجعة",
       "status_resolved": "محلول",
       "status_escalated": "مُصعَّد",
       "no_tickets": "لا توجد تذاكر دعم"

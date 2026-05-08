@@ -8,15 +8,16 @@ import Button from '../../components/Button'
 import StatusBadge from '../../components/StatusBadge'
 import WearBadge from '../../components/WearBadge'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { getCompany, updateCompanyStatus, getCompanyAuditLogs } from '../../api/companies.api'
+import { getCompany, updateCompanyStatus, getCompanyAuditLogs, getCompanyUsers, CompanyUser } from '../../api/companies.api'
 import { getCompanyActivations } from '../../api/activations.api'
 
-type Tab = 'info' | 'machines' | 'discs' | 'sat' | 'audit'
+type Tab = 'info' | 'machines' | 'discs' | 'users' | 'sat' | 'audit'
 
 const TABS: { key: Tab; labelKey: string }[] = [
   { key: 'info',     labelKey: 'company_detail.tab_info' },
   { key: 'machines', labelKey: 'company_detail.tab_machines' },
   { key: 'discs',    labelKey: 'company_detail.tab_discs' },
+  { key: 'users',    labelKey: 'company_detail.tab_users' },
   { key: 'sat',      labelKey: 'company_detail.tab_sat' },
   { key: 'audit',    labelKey: 'company_detail.tab_audit' },
 ]
@@ -50,6 +51,12 @@ export default function CompanyDetailPage() {
     queryKey: ['company-activations', id],
     queryFn: () => getCompanyActivations(id!),
     enabled: !!id && tab === 'discs',
+  })
+
+  const { data: companyUsers = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['company-users', id],
+    queryFn: () => getCompanyUsers(id!),
+    enabled: !!id && tab === 'users',
   })
 
   const { data: auditLogs = [] } = useQuery({
@@ -302,6 +309,60 @@ export default function CompanyDetailPage() {
                       </div>
                     </div>
                   ))
+                )}
+              </div>
+            )}
+
+            {/* USERS TAB */}
+            {tab === 'users' && (
+              <div>
+                {usersLoading ? (
+                  <div className="flex justify-center py-10"><LoadingSpinner size="md" className="text-blue-500" /></div>
+                ) : companyUsers.length === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.no_users')}</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      <tr>
+                        <th className="text-left px-4 py-2">{t('company_detail.col_name')}</th>
+                        <th className="text-left px-4 py-2">{t('company_detail.col_email')}</th>
+                        <th className="text-left px-4 py-2">{t('company_detail.col_role')}</th>
+                        <th className="text-left px-4 py-2">{t('company_detail.col_status')}</th>
+                        <th className="text-left px-4 py-2">{t('company_detail.col_created')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {companyUsers.map((u: CompanyUser) => (
+                        <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                          <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-white">{u.name}</td>
+                          <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{u.email}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={[
+                              'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
+                              u.role === 'CUSTOMER_ADMIN'
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                            ].join(' ')}>
+                              {u.role === 'CUSTOMER_ADMIN' ? t('company_detail.role_admin') : t('company_detail.role_operator')}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className={[
+                              'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
+                              u.is_active
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+                            ].join(' ')}>
+                              {u.is_active ? t('company_detail.user_active') : t('company_detail.user_inactive')}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(u.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
             )}

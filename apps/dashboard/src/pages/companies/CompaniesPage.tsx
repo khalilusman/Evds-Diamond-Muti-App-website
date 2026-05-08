@@ -20,6 +20,7 @@ interface StatusModalProps {
 }
 
 function StatusModal({ company, onClose, onDone }: StatusModalProps) {
+  const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
@@ -47,8 +48,8 @@ function StatusModal({ company, onClose, onDone }: StatusModalProps) {
   })
 
   function handleConfirm() {
-    if (!status) { setError('Select a status'); return }
-    if (requiresReason && !reason.trim()) { setError('Reason is required'); return }
+    if (!status) { setError(t('companies.status_required')); return }
+    if (requiresReason && !reason.trim()) { setError(t('companies.reason_required')); return }
     setError('')
     mut.mutate()
   }
@@ -56,22 +57,22 @@ function StatusModal({ company, onClose, onDone }: StatusModalProps) {
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Change Company Status</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('companies.change_status_title')}</h2>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Current:</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('companies.current_status_label')}</span>
           <StatusBadge status={company.status} />
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">New Status</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('company_detail.new_status')}</label>
           <select
             title="New status"
             value={status}
             onChange={(e) => { setStatus(e.target.value); setError('') }}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
-            <option value="">— Select —</option>
+            <option value="">{t('companies.select_status')}</option>
             {nextOptions.map((s) => (
               <option key={s} value={s}>
                 {s === 'ACTIVE' ? 'ACTIVE (Reactivate)' : s}
@@ -82,7 +83,7 @@ function StatusModal({ company, onClose, onDone }: StatusModalProps) {
 
         {requiresReason && (
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Reason *</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('company_detail.reason_label')}</label>
             <textarea
               value={reason}
               onChange={(e) => { setReason(e.target.value); setError('') }}
@@ -96,8 +97,8 @@ function StatusModal({ company, onClose, onDone }: StatusModalProps) {
         {error && <p className="text-xs text-red-500">{error}</p>}
 
         <div className="flex gap-3 pt-1">
-          <Button variant="ghost" onClick={onClose} disabled={mut.isPending}>Cancel</Button>
-          <Button onClick={handleConfirm} loading={mut.isPending}>Confirm</Button>
+          <Button variant="ghost" onClick={onClose} disabled={mut.isPending}>{t('common.cancel')}</Button>
+          <Button onClick={handleConfirm} loading={mut.isPending}>{t('common.confirm')}</Button>
         </div>
       </div>
     </div>
@@ -205,7 +206,7 @@ export default function CompaniesPage() {
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
                 ].join(' ')}
               >
-                {tab === 'All' ? 'All' : tab.charAt(0) + tab.slice(1).toLowerCase()}
+                {tab === 'All' ? t('companies.all') : t(`companies.${tab.toLowerCase()}`, { defaultValue: tab.charAt(0) + tab.slice(1).toLowerCase() })}
               </button>
             ))}
           </div>
@@ -219,7 +220,7 @@ export default function CompaniesPage() {
             </div>
           ) : companies.length === 0 ? (
             <div className="py-16 text-center text-sm text-gray-400 dark:text-gray-500">
-              No companies found
+              {t('companies.no_companies')}
             </div>
           ) : (
             <>
@@ -338,25 +339,13 @@ export default function CompaniesPage() {
 
               {/* Pagination */}
               <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                <span>
-                  Showing {((page - 1) * 20) + 1}–{Math.min(page * 20, total)} of {total}
-                </span>
+                <span>{t('companies.showing', { from: ((page - 1) * 20) + 1, to: Math.min(page * 20, total), total })}</span>
                 <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    ← Previous
+                  <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                    {t('companies.previous')}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={page >= pages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next →
+                  <Button variant="ghost" size="sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+                    {t('companies.next')}
                   </Button>
                 </div>
               </div>

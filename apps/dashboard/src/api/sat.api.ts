@@ -18,8 +18,14 @@ export interface SatTicketSummary {
   }
 }
 
-export interface SatTicketDetail extends SatTicketSummary {
+export interface SatTicketDetail {
+  id: string
+  status: string
+  symptom_code: string
   symptom_detail: string | null
+  created_at: string
+  resolved_at: string | null
+  company_id: string
   rpm_reported: number | null
   feed_reported: number | null
   diameter_reported: number | null
@@ -30,6 +36,29 @@ export interface SatTicketDetail extends SatTicketSummary {
   evds_solution: string | null
   resolved_by: string | null
   photo_urls: string[]
+  activation: {
+    id: string
+    diameter_at_activation: number
+    thickness_cm: number
+    material_group: string | null
+    activated_at: string
+    company: {
+      name: string
+      contact_name: string
+      email: string
+      country: string
+    }
+    machine: {
+      name: string
+    }
+    label: {
+      unique_code: string
+      lot_number: string
+      nominal_diameter: number
+      family: { name: string }
+    }
+  }
+  reporter: { name: string; email: string } | null
   catalog_params: {
     recommended_rpm: number
     feed_2cm: number

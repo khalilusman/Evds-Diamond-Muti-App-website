@@ -189,6 +189,7 @@
       "prevention": "Prevención",
       "escalate": "Escalar al soporte EVDS",
       "status_open": "Abierto",
+      "status_in_review": "En revisión",
       "status_resolved": "Resuelto",
       "status_escalated": "Escalado",
       "no_tickets": "No hay tickets de soporte"

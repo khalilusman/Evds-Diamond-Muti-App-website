@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -27,13 +28,6 @@ const FALLBACK_COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', 
 const WEEK_OPTIONS = [7, 12, 26, 52] as const
 type WeekOption = typeof WEEK_OPTIONS[number]
 
-const WEEK_LABELS: Record<WeekOption, string> = {
-  7: '7 wks',
-  12: '12 wks',
-  26: '26 wks',
-  52: '52 wks',
-}
-
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
@@ -55,6 +49,7 @@ function KpiPill({ label, value }: { label: string; value: string | number }) {
 const gridStroke = 'var(--grid-stroke)'
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
   const [weeks, setWeeks] = useState<WeekOption>(12)
 
   const summaryQ = useQuery({ queryKey: ['analytics-summary'], queryFn: getAnalyticsSummary, staleTime: 30_000 })
@@ -82,12 +77,12 @@ export default function AnalyticsPage() {
     logs: w.usage_logs_count,
   }))
 
-  const totalGeo = geography.reduce((s, g) => s + g.company_count, 0)
+  const totalGeo = geography.reduce((sum, g) => sum + g.company_count, 0)
 
   const isAnyLoading = summaryQ.isLoading || weeklyQ.isLoading || matQ.isLoading
 
   return (
-    <DashboardLayout title="Analytics">
+    <DashboardLayout title={t('analytics.title')}>
       <style>{`:root { --grid-stroke: #e5e7eb } .dark { --grid-stroke: #374151 }`}</style>
 
       {isAnyLoading ? (
@@ -98,18 +93,18 @@ export default function AnalyticsPage() {
           {/* KPI row */}
           {s && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <KpiPill label="Active Companies" value={s.active_companies} />
-              <KpiPill label="Discs In Field" value={s.discs_in_field} />
-              <KpiPill label="Open SAT" value={s.open_sat_tickets} />
-              <KpiPill label="Wear Alerts" value={s.wear_alerts} />
-              <KpiPill label="Labels Generated" value={s.labels_generated} />
-              <KpiPill label="Activation Rate" value={`${s.activation_rate_pct}%`} />
+              <KpiPill label={t('analytics.kpi_active_companies')} value={s.active_companies} />
+              <KpiPill label={t('analytics.kpi_discs_in_field')} value={s.discs_in_field} />
+              <KpiPill label={t('analytics.kpi_open_sat')} value={s.open_sat_tickets} />
+              <KpiPill label={t('analytics.kpi_wear_alerts')} value={s.wear_alerts} />
+              <KpiPill label={t('analytics.kpi_labels_generated')} value={s.labels_generated} />
+              <KpiPill label={t('analytics.kpi_activation_rate')} value={`${s.activation_rate_pct}%`} />
             </div>
           )}
 
           {/* Week range selector */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Range:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{t('analytics.range')}:</span>
             {WEEK_OPTIONS.map((w) => (
               <button
                 key={w}
@@ -122,15 +117,14 @@ export default function AnalyticsPage() {
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
                 ].join(' ')}
               >
-                {WEEK_LABELS[w]}
+                {w} {t('analytics.weeks_abbr')}
               </button>
             ))}
           </div>
 
           {/* Chart row 1 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Weekly Activations bar chart */}
-            <SectionCard title="Weekly Activations">
+            <SectionCard title={t('analytics.weekly_activations')}>
               {weeklyQ.isLoading ? (
                 <div className="flex justify-center py-12"><LoadingSpinner size="md" className="text-blue-500" /></div>
               ) : (
@@ -142,18 +136,17 @@ export default function AnalyticsPage() {
                     <Tooltip
                       contentStyle={{ backgroundColor: 'var(--tooltip-bg, #fff)', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }}
                     />
-                    <Bar dataKey="activations" name="Activations" fill="#2563EB" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="activations" name={t('analytics.series_activations')} fill="#2563EB" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </SectionCard>
 
-            {/* Material distribution pie */}
-            <SectionCard title="Material Distribution">
+            <SectionCard title={t('analytics.material_distribution')}>
               {matQ.isLoading ? (
                 <div className="flex justify-center py-12"><LoadingSpinner size="md" className="text-blue-500" /></div>
               ) : materials.length === 0 ? (
-                <p className="text-sm text-center text-gray-400 py-12">No data available</p>
+                <p className="text-sm text-center text-gray-400 py-12">{t('analytics.no_data')}</p>
               ) : (
                 <div className="flex items-center gap-4">
                   <ResponsiveContainer width="60%" height={200}>
@@ -185,8 +178,7 @@ export default function AnalyticsPage() {
 
           {/* Chart row 2 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usage logs trend line chart */}
-            <SectionCard title="Usage Activity Trend">
+            <SectionCard title={t('analytics.usage_activity_trend')}>
               {weeklyQ.isLoading ? (
                 <div className="flex justify-center py-12"><LoadingSpinner size="md" className="text-blue-500" /></div>
               ) : (
@@ -196,18 +188,17 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                    <Line type="monotone" dataKey="logs" name="Usage Logs" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="logs" name={t('analytics.series_usage_logs')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
             </SectionCard>
 
-            {/* Most common issues */}
-            <SectionCard title="Most Common Issues">
+            <SectionCard title={t('analytics.most_common_issues')}>
               {perfQ.isLoading ? (
                 <div className="flex justify-center py-12"><LoadingSpinner size="md" className="text-blue-500" /></div>
               ) : !perf || perf.top_symptoms.length === 0 ? (
-                <p className="text-sm text-center text-gray-400 py-12">No SAT data available</p>
+                <p className="text-sm text-center text-gray-400 py-12">{t('analytics.no_sat_data')}</p>
               ) : (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart
@@ -219,7 +210,7 @@ export default function AnalyticsPage() {
                     <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
                     <YAxis type="category" dataKey="symptom_code" tick={{ fontSize: 10 }} width={80} />
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                    <Bar dataKey="count" name="Tickets" fill="#2563EB" radius={[0, 3, 3, 0]} />
+                    <Bar dataKey="count" name={t('analytics.series_tickets')} fill="#2563EB" radius={[0, 3, 3, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -227,18 +218,18 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Geography table */}
-          <SectionCard title="Companies by Country">
+          <SectionCard title={t('analytics.companies_by_country')}>
             {geoQ.isLoading ? (
               <div className="flex justify-center py-8"><LoadingSpinner size="md" className="text-blue-500" /></div>
             ) : geography.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No data available</p>
+              <p className="text-sm text-gray-400 text-center py-8">{t('analytics.no_data')}</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   <tr>
-                    <th className="text-left py-2">Country</th>
-                    <th className="text-right py-2">Companies</th>
-                    <th className="text-right py-2">% of Total</th>
+                    <th className="text-left py-2">{t('analytics.col_country')}</th>
+                    <th className="text-right py-2">{t('analytics.col_companies')}</th>
+                    <th className="text-right py-2">{t('analytics.col_pct_total')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -257,21 +248,21 @@ export default function AnalyticsPage() {
           </SectionCard>
 
           {/* Wear alerts */}
-          <SectionCard title="Discs Approaching End of Life">
+          <SectionCard title={t('analytics.discs_end_of_life')}>
             {wearQ.isLoading ? (
               <div className="flex justify-center py-8"><LoadingSpinner size="md" className="text-blue-500" /></div>
             ) : wearAlerts.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No wear alerts — all discs within safe range</p>
+              <p className="text-sm text-gray-400 text-center py-8">{t('analytics.no_wear_alerts')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     <tr>
-                      <th className="text-left py-2">Company</th>
-                      <th className="text-left py-2">Machine</th>
-                      <th className="text-left py-2">Disc</th>
-                      <th className="text-right py-2">Wear %</th>
-                      <th className="text-right py-2">Expires</th>
+                      <th className="text-left py-2">{t('analytics.col_company')}</th>
+                      <th className="text-left py-2">{t('analytics.col_machine')}</th>
+                      <th className="text-left py-2">{t('analytics.col_disc')}</th>
+                      <th className="text-right py-2">{t('analytics.col_wear_pct')}</th>
+                      <th className="text-right py-2">{t('analytics.col_expires')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">

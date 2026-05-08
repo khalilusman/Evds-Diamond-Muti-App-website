@@ -123,9 +123,26 @@ export async function createUser(req: Request, res: Response, next: NextFunction
   }
 }
 
-// GET /api/users  (CUSTOMER_ADMIN)
+// GET /api/users  (CUSTOMER_ADMIN — own company; EVDS_ADMIN/EVDS_SUPPORT — any company via ?company_id=)
 export async function listUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    const isEvds = req.user!.role === 'EVDS_ADMIN' || req.user!.role === 'EVDS_SUPPORT'
+
+    if (isEvds) {
+      const companyId = req.query.company_id as string | undefined
+      if (!companyId) {
+        res.status(400).json({ error: 'VALIDATION_ERROR', message: 'company_id query param is required for EVDS staff' })
+        return
+      }
+      const users = await prisma.user.findMany({
+        where: { company_id: companyId },
+        select: SAFE_SELECT,
+        orderBy: { created_at: 'asc' },
+      })
+      res.json({ data: users, total: users.length })
+      return
+    }
+
     const users = await prisma.user.findMany({
       where: { company_id: req.user!.companyId },
       select: SAFE_SELECT,

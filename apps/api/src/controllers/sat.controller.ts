@@ -164,7 +164,11 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       where: { id: req.params.id },
       include: {
         activation: {
-          include: { label: { include: { family: true } } },
+          include: {
+            label: { include: { family: true } },
+            machine: true,
+            company: true,
+          },
         },
       },
     })
@@ -180,12 +184,17 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       return
     }
 
-    // Catalog params for side-by-side comparison
-    const lastLog = await prisma.usageLog.findFirst({
-      where: { activation_id: ticket.activation_id },
-      orderBy: { logged_at: 'desc' },
-      select: { material_group: true },
-    })
+    const [lastLog, reporter] = await Promise.all([
+      prisma.usageLog.findFirst({
+        where: { activation_id: ticket.activation_id },
+        orderBy: { logged_at: 'desc' },
+        select: { material_group: true },
+      }),
+      ticket.reported_by
+        ? prisma.user.findUnique({ where: { id: ticket.reported_by }, select: { name: true, email: true } })
+        : null,
+    ])
+
     const catalogParams = await prisma.discCatalog.findFirst({
       where: {
         family_id: ticket.activation.label.family_id,
@@ -197,6 +206,7 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
     res.json({
       data: {
         ...ticket,
+        reporter,
         catalog_params: catalogParams,
         comparison: catalogParams ? {
           rpm: { reported: ticket.rpm_reported, recommended: catalogParams.recommended_rpm },

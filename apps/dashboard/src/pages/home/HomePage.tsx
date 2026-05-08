@@ -40,7 +40,7 @@ export default function HomePage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
-  const { data: summary, isLoading } = useQuery({
+  const { data: summary, isLoading, isError, error } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: getAnalyticsSummary,
     staleTime: 30_000,
@@ -66,7 +66,31 @@ export default function HomePage() {
     )
   }
 
-  const s = summary!
+  if (isError) {
+    return (
+      <DashboardLayout title="Home">
+        <div className="flex flex-col items-center py-20 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-red-600 dark:text-red-400 font-medium">
+            {(error as Error)?.message ?? t('errors.generic')}
+          </p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const s = {
+    active_companies:      summary?.active_companies      ?? 0,
+    pending_companies:     summary?.pending_companies     ?? 0,
+    discs_in_field:        summary?.discs_in_field        ?? 0,
+    open_sat_tickets:      summary?.open_sat_tickets      ?? 0,
+    wear_alerts:           summary?.wear_alerts           ?? 0,
+    new_this_week:         summary?.new_this_week         ?? 0,
+    labels_generated:      summary?.labels_generated      ?? 0,
+    activation_rate_pct:   summary?.activation_rate_pct  ?? 0,
+    first_pending_company: summary?.first_pending_company ?? null,
+    oldest_open_ticket:    summary?.oldest_open_ticket    ?? null,
+  }
 
   const kpis: KpiCardProps[] = [
     { icon: '🏢', label: t('dashboard.kpi_active_companies'),  value: s.active_companies,              borderColor: 'border-green-500',  onClick: () => navigate('/companies?status=ACTIVE') },
@@ -89,7 +113,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <span className="text-xl">⚠️</span>
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                {s.pending_companies} {s.pending_companies === 1 ? 'company' : 'companies'} awaiting approval
+                {t('dashboard.pending_banner', { count: s.pending_companies })}
               </p>
             </div>
             <Button
@@ -129,7 +153,7 @@ export default function HomePage() {
                     loading={approveMut.isPending}
                     onClick={() => approveMut.mutate(s.first_pending_company!.id)}
                   >
-                    Approve
+                    {t('dashboard.approve')}
                   </Button>
                   <Button
                     variant="ghost"
