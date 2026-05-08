@@ -1,6 +1,7 @@
 import { ReactNode, useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import Logo from '../components/Logo'
 import ThemeToggle from '../components/ThemeToggle'
 import LanguageSwitcher from '../components/LanguageSwitcher'
@@ -9,25 +10,26 @@ import { getAnalyticsSummary } from '../api/analytics.api'
 
 interface NavItem {
   icon: string
-  label: string
+  labelKey: string
   path: string
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: '🏠', label: 'Home', path: '/' },
-  { icon: '🏢', label: 'Companies', path: '/companies' },
-  { icon: '💿', label: 'Disc Monitoring', path: '/discs' },
-  { icon: '🏷️', label: 'Label Generator', path: '/labels' },
-  { icon: '🔒', label: 'Security Alerts', path: '/security' },
-  { icon: '🔧', label: 'SAT Tickets', path: '/sat' },
-  { icon: '📊', label: 'Analytics', path: '/analytics' },
-  { icon: '👤', label: 'EVDS Staff', path: '/staff' },
-  { icon: '📱', label: 'QR Code', path: '/qr' },
+  { icon: '🏠', labelKey: 'nav.dashboard',       path: '/' },
+  { icon: '🏢', labelKey: 'nav.companies',        path: '/companies' },
+  { icon: '💿', labelKey: 'nav.disc_monitoring',  path: '/discs' },
+  { icon: '🏷️', labelKey: 'nav.labels',           path: '/labels' },
+  { icon: '🔒', labelKey: 'nav.security',         path: '/security' },
+  { icon: '🔧', labelKey: 'nav.sat',              path: '/sat' },
+  { icon: '📊', labelKey: 'nav.analytics',        path: '/analytics' },
+  { icon: '👤', labelKey: 'nav.staff',            path: '/staff' },
+  { icon: '📱', labelKey: 'nav.qr',               path: '/qr' },
 ]
 
 const MOBILE_NAV: NavItem[] = NAV_ITEMS.slice(0, 5)
 
 function SidebarNav({ onClose }: { onClose?: () => void }) {
+  const { t } = useTranslation()
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
 
@@ -70,7 +72,7 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
             }
           >
             <span className="text-lg leading-none">{item.icon}</span>
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </NavLink>
         ))}
       </nav>
@@ -106,14 +108,14 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
               ].join(' ')
             }
           >
-            Profile
+            {t('nav.profile')}
           </NavLink>
           <button
             type="button"
             onClick={handleLogout}
             className="text-xs text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            Logout
+            {t('common.logout')}
           </button>
         </div>
       </div>
@@ -127,6 +129,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
+  const { t } = useTranslation()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showNotifs, setShowNotifs] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -217,13 +220,13 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             <div className="absolute right-0 top-12 w-80 z-50 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Notifications
+                  {t('dashboard.notifications')}
                 </p>
               </div>
 
               {notifCount === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">
-                  All clear — no items need attention
+                  {t('dashboard.all_clear')}
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -301,7 +304,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             }
           >
             <span className="text-xl leading-none">{item.icon}</span>
-            <span>{item.label.split(' ')[0]}</span>
+            <span>{t(item.labelKey).split(' ')[0]}</span>
           </NavLink>
         ))}
       </nav>

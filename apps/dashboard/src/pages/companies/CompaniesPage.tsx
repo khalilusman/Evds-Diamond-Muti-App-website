@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import Button from '../../components/Button'
@@ -104,6 +105,7 @@ function StatusModal({ company, onClose, onDone }: StatusModalProps) {
 }
 
 export default function CompaniesPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -172,14 +174,14 @@ export default function CompaniesPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder="Search by name or email…"
+                placeholder={t('companies.search_placeholder')}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               />
             </div>
             <input
               title="Filter by country"
-              placeholder="Country"
+              placeholder={t('companies.country_placeholder')}
               value={country}
               onChange={(e) => { setCountry(e.target.value); setPage(1) }}
               className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full sm:w-36"
@@ -226,14 +228,14 @@ export default function CompaniesPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     <tr>
-                      <th className="text-left px-5 py-3">Company</th>
-                      <th className="text-left px-5 py-3">Contact</th>
-                      <th className="text-left px-5 py-3">Email</th>
-                      <th className="text-left px-5 py-3">Country</th>
-                      <th className="text-left px-5 py-3">Status</th>
-                      <th className="text-left px-5 py-3">Registered</th>
-                      <th className="text-left px-5 py-3">Discs</th>
-                      <th className="text-right px-5 py-3">Actions</th>
+                      <th className="text-left px-5 py-3">{t('companies.name')}</th>
+                      <th className="text-left px-5 py-3">{t('companies.contact')}</th>
+                      <th className="text-left px-5 py-3">{t('companies.email')}</th>
+                      <th className="text-left px-5 py-3">{t('companies.country')}</th>
+                      <th className="text-left px-5 py-3">{t('companies.status')}</th>
+                      <th className="text-left px-5 py-3">{t('companies.registered')}</th>
+                      <th className="text-left px-5 py-3">{t('companies.discs')}</th>
+                      <th className="text-right px-5 py-3">{t('companies.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -259,7 +261,7 @@ export default function CompaniesPage() {
                                 loading={approveMut.isPending}
                                 onClick={() => approveMut.mutate(c.id)}
                               >
-                                Approve
+                                {t('companies.approve')}
                               </Button>
                             )}
                             {c.status === 'ACTIVE' && (
@@ -268,7 +270,7 @@ export default function CompaniesPage() {
                                 size="sm"
                                 onClick={() => setStatusModal(c)}
                               >
-                                Suspend
+                                {t('companies.suspend')}
                               </Button>
                             )}
                             {(c.status === 'SUSPENDED' || c.status === 'DEACTIVATED') && (
@@ -278,7 +280,7 @@ export default function CompaniesPage() {
                                 loading={reactivateMut.isPending}
                                 onClick={() => reactivateMut.mutate(c.id)}
                               >
-                                Reactivate
+                                {t('companies.reactivate')}
                               </Button>
                             )}
                             <Button
@@ -286,7 +288,7 @@ export default function CompaniesPage() {
                               size="sm"
                               onClick={() => navigate(`/companies/${c.id}`)}
                             >
-                              View
+                              {t('companies.view')}
                             </Button>
                           </div>
                         </td>
@@ -313,21 +315,21 @@ export default function CompaniesPage() {
                     <div className="flex gap-2 flex-wrap">
                       {c.status === 'PENDING' && (
                         <Button variant="success" size="sm" onClick={() => approveMut.mutate(c.id)}>
-                          Approve
+                          {t('companies.approve')}
                         </Button>
                       )}
                       {c.status === 'ACTIVE' && (
                         <Button variant="warning" size="sm" onClick={() => setStatusModal(c)}>
-                          Suspend
+                          {t('companies.suspend')}
                         </Button>
                       )}
                       {(c.status === 'SUSPENDED' || c.status === 'DEACTIVATED') && (
                         <Button variant="success" size="sm" loading={reactivateMut.isPending} onClick={() => reactivateMut.mutate(c.id)}>
-                          Reactivate
+                          {t('companies.reactivate')}
                         </Button>
                       )}
                       <Button variant="ghost" size="sm" onClick={() => navigate(`/companies/${c.id}`)}>
-                        View
+                        {t('companies.view')}
                       </Button>
                     </div>
                   </div>

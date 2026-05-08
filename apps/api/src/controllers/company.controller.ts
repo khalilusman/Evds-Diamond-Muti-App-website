@@ -78,7 +78,10 @@ export async function getCompany(req: Request, res: Response, next: NextFunction
     const company = await prisma.company.findUnique({
       where: { id: req.params.id },
       include: {
-        machines: { where: { is_active: true } },
+        machines: {
+          where: { is_active: true },
+          include: { _count: { select: { activations: true } } },
+        },
         _count: { select: { activations: { where: { status: 'ACTIVE' } } } },
       },
     })

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import Button from '../../components/Button'
@@ -35,6 +36,7 @@ function KpiCard({ icon, label, value, borderColor, onClick }: KpiCardProps) {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -67,14 +69,14 @@ export default function HomePage() {
   const s = summary!
 
   const kpis: KpiCardProps[] = [
-    { icon: '🏢', label: 'Active Companies',  value: s.active_companies,              borderColor: 'border-green-500',  onClick: () => navigate('/companies?status=ACTIVE') },
-    { icon: '⏳', label: 'Pending Approval',  value: s.pending_companies,             borderColor: 'border-amber-500',  onClick: () => navigate('/companies?status=PENDING') },
-    { icon: '💿', label: 'Discs In Field',    value: s.discs_in_field,                borderColor: 'border-blue-500',   onClick: () => navigate('/discs') },
-    { icon: '🔧', label: 'Open SAT Tickets', value: s.open_sat_tickets,              borderColor: 'border-red-500',    onClick: () => navigate('/sat?status=OPEN') },
-    { icon: '⚠️', label: 'Wear Alerts',       value: s.wear_alerts,                  borderColor: 'border-orange-500', onClick: () => navigate('/discs?wear=critical') },
-    { icon: '📅', label: 'New This Week',     value: s.new_this_week,                borderColor: 'border-purple-500', onClick: () => navigate('/companies?filter=new') },
-    { icon: '🏷️', label: 'Labels Generated', value: s.labels_generated,             borderColor: 'border-cyan-500'  },
-    { icon: '📈', label: 'Activation Rate',   value: `${s.activation_rate_pct ?? 0}%`, borderColor: 'border-teal-500' },
+    { icon: '🏢', label: t('dashboard.kpi_active_companies'),  value: s.active_companies,              borderColor: 'border-green-500',  onClick: () => navigate('/companies?status=ACTIVE') },
+    { icon: '⏳', label: t('dashboard.kpi_pending_approval'),  value: s.pending_companies,             borderColor: 'border-amber-500',  onClick: () => navigate('/companies?status=PENDING') },
+    { icon: '💿', label: t('dashboard.kpi_discs_in_field'),    value: s.discs_in_field,                borderColor: 'border-blue-500',   onClick: () => navigate('/discs') },
+    { icon: '🔧', label: t('dashboard.kpi_open_sat'),          value: s.open_sat_tickets,              borderColor: 'border-red-500',    onClick: () => navigate('/sat?status=OPEN') },
+    { icon: '⚠️', label: t('dashboard.kpi_wear_alerts'),       value: s.wear_alerts,                  borderColor: 'border-orange-500', onClick: () => navigate('/discs?wear=critical') },
+    { icon: '📅', label: t('dashboard.kpi_new_this_week'),     value: s.new_this_week,                borderColor: 'border-purple-500', onClick: () => navigate('/companies?filter=new') },
+    { icon: '🏷️', label: t('dashboard.kpi_labels_generated'), value: s.labels_generated,             borderColor: 'border-cyan-500'  },
+    { icon: '📈', label: t('dashboard.kpi_activation_rate'),   value: `${s.activation_rate_pct ?? 0}%`, borderColor: 'border-teal-500' },
   ]
 
   return (
@@ -95,7 +97,7 @@ export default function HomePage() {
               size="sm"
               onClick={() => navigate('/companies?status=PENDING')}
             >
-              Review Now
+              {t('dashboard.review_now')}
             </Button>
           </div>
         )}
@@ -113,7 +115,7 @@ export default function HomePage() {
           {/* Approve next pending */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5 space-y-3">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Next Pending Company
+              {t('dashboard.next_pending_company')}
             </h2>
             {s.first_pending_company ? (
               <>
@@ -134,19 +136,19 @@ export default function HomePage() {
                     size="sm"
                     onClick={() => navigate(`/companies/${s.first_pending_company!.id}`)}
                   >
-                    View Details
+                    {t('dashboard.view_details')}
                   </Button>
                 </div>
               </>
             ) : (
-              <p className="text-sm text-gray-400 dark:text-gray-500">No pending companies</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{t('dashboard.no_pending')}</p>
             )}
           </div>
 
           {/* Oldest open SAT ticket */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5 space-y-3">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Oldest Open SAT Ticket
+              {t('dashboard.oldest_open_ticket')}
             </h2>
             {s.oldest_open_ticket ? (
               <>
@@ -163,11 +165,11 @@ export default function HomePage() {
                   size="sm"
                   onClick={() => navigate('/sat')}
                 >
-                  View Ticket
+                  {t('dashboard.view_ticket')}
                 </Button>
               </>
             ) : (
-              <p className="text-sm text-gray-400 dark:text-gray-500">No open tickets</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{t('dashboard.no_open_tickets')}</p>
             )}
           </div>
         </div>

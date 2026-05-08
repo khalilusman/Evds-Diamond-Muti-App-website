@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import Button from '../../components/Button'
@@ -12,12 +13,12 @@ import { getCompanyActivations } from '../../api/activations.api'
 
 type Tab = 'info' | 'machines' | 'discs' | 'sat' | 'audit'
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'info',     label: 'Info' },
-  { key: 'machines', label: 'Machines' },
-  { key: 'discs',    label: 'Active Discs' },
-  { key: 'sat',      label: 'SAT History' },
-  { key: 'audit',    label: 'Audit Trail' },
+const TABS: { key: Tab; labelKey: string }[] = [
+  { key: 'info',     labelKey: 'company_detail.tab_info' },
+  { key: 'machines', labelKey: 'company_detail.tab_machines' },
+  { key: 'discs',    labelKey: 'company_detail.tab_discs' },
+  { key: 'sat',      labelKey: 'company_detail.tab_sat' },
+  { key: 'audit',    labelKey: 'company_detail.tab_audit' },
 ]
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
@@ -30,6 +31,7 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
 }
 
 export default function CompanyDetailPage() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -95,7 +97,7 @@ export default function CompanyDetailPage() {
   if (!company) {
     return (
       <DashboardLayout title="Company Detail">
-        <div className="text-center py-20 text-gray-400">Company not found</div>
+        <div className="text-center py-20 text-gray-400">{t('company_detail.not_found')}</div>
       </DashboardLayout>
     )
   }
@@ -115,13 +117,13 @@ export default function CompanyDetailPage() {
       {statusModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Change Status</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('company_detail.change_status')}</h2>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Current:</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('company_detail.current_status')}</span>
               <StatusBadge status={company.status} />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">New Status</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('company_detail.new_status')}</label>
               <select
                 title="New status"
                 value={newStatus}
@@ -136,7 +138,7 @@ export default function CompanyDetailPage() {
             </div>
             {(newStatus === 'SUSPENDED' || newStatus === 'DEACTIVATED') && (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Reason *</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('company_detail.reason_label')}</label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -181,12 +183,12 @@ export default function CompanyDetailPage() {
                 loading={reactivateMut.isPending}
                 onClick={() => reactivateMut.mutate()}
               >
-                Reactivate
+                {t('company_detail.reactivate')}
               </Button>
             )}
             {statusOptions.length > 0 && (
               <Button variant="secondary" size="sm" onClick={() => setStatusModal(true)}>
-                Change Status
+                {t('company_detail.change_status')}
               </Button>
             )}
           </div>
@@ -195,7 +197,7 @@ export default function CompanyDetailPage() {
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow overflow-hidden">
           <div className="flex border-b border-gray-100 dark:border-gray-800 overflow-x-auto">
-            {TABS.map(({ key, label }) => (
+            {TABS.map(({ key, labelKey }) => (
               <button
                 key={key}
                 type="button"
@@ -207,7 +209,7 @@ export default function CompanyDetailPage() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
                 ].join(' ')}
               >
-                {label}
+                {t(labelKey)}
               </button>
             ))}
           </div>
@@ -218,35 +220,35 @@ export default function CompanyDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                    Company Details
+                    {t('company_detail.section_details')}
                   </h3>
-                  <InfoRow label="Name" value={company.name} />
-                  <InfoRow label="Contact" value={company.contact_name} />
-                  <InfoRow label="Email" value={company.email} />
-                  <InfoRow label="Country" value={company.country} />
-                  <InfoRow label="Language" value={company.language} />
-                  <InfoRow label="Status" value={company.status} />
-                  <InfoRow label="Registered" value={new Date(company.created_at).toLocaleString()} />
-                  <InfoRow label="Onboarding" value={company.onboarding_complete ? 'Complete' : 'Incomplete'} />
+                  <InfoRow label={t('company_detail.field_name')} value={company.name} />
+                  <InfoRow label={t('company_detail.field_contact')} value={company.contact_name} />
+                  <InfoRow label={t('company_detail.field_email')} value={company.email} />
+                  <InfoRow label={t('company_detail.field_country')} value={company.country} />
+                  <InfoRow label={t('company_detail.field_language')} value={company.language} />
+                  <InfoRow label={t('company_detail.field_status')} value={company.status} />
+                  <InfoRow label={t('company_detail.field_registered')} value={new Date(company.created_at).toLocaleString()} />
+                  <InfoRow label={t('company_detail.field_onboarding')} value={company.onboarding_complete ? t('company_detail.onboarding_complete') : t('company_detail.onboarding_incomplete')} />
                   {company.status_reason && (
-                    <InfoRow label="Status Reason" value={company.status_reason} />
+                    <InfoRow label={t('company_detail.field_status_reason')} value={company.status_reason} />
                   )}
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                    Cost Configuration
+                    {t('company_detail.section_cost')}
                   </h3>
                   {company.cost_config ? (
                     <>
-                      <InfoRow label="Machine Cost" value={`€${company.cost_config.machine_cost_hour}/h`} />
-                      <InfoRow label="Labor Cost" value={`€${company.cost_config.labor_cost_hour}/h`} />
-                      <InfoRow label="Energy Cost" value={`€${company.cost_config.energy_cost_kwh}/kWh`} />
-                      <InfoRow label="Default Disc Price" value={`€${company.cost_config.default_disc_price}`} />
-                      <InfoRow label="Downtime %" value={`${company.cost_config.downtime_pct}%`} />
-                      <InfoRow label="Waste %" value={`${company.cost_config.waste_pct}%`} />
+                      <InfoRow label={t('company_detail.field_machine_cost')} value={`€${company.cost_config.machine_cost_hour}/h`} />
+                      <InfoRow label={t('company_detail.field_labor_cost')} value={`€${company.cost_config.labor_cost_hour}/h`} />
+                      <InfoRow label={t('company_detail.field_energy_cost')} value={`€${company.cost_config.energy_cost_kwh}/kWh`} />
+                      <InfoRow label={t('company_detail.field_disc_price')} value={`€${company.cost_config.default_disc_price}`} />
+                      <InfoRow label={t('company_detail.field_downtime')} value={`${company.cost_config.downtime_pct}%`} />
+                      <InfoRow label={t('company_detail.field_waste')} value={`${company.cost_config.waste_pct}%`} />
                     </>
                   ) : (
-                    <p className="text-sm text-gray-400 dark:text-gray-500">No cost config set</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.no_cost_config')}</p>
                   )}
                 </div>
               </div>
@@ -256,18 +258,18 @@ export default function CompanyDetailPage() {
             {tab === 'machines' && (
               <div className="space-y-2">
                 {(company.machines ?? []).length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-gray-500">No machines registered</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.no_machines')}</p>
                 ) : (
                   (company.machines ?? []).map((m) => (
                     <div key={m.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">{m.name}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Added {new Date(m.created_at).toLocaleDateString()}
+                          {t('company_detail.machine_added')} {new Date(m.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {m._count?.activations ?? 0} activations
+                        {m._count?.activations ?? 0} {t('company_detail.activations')}
                       </span>
                     </div>
                   ))
@@ -279,7 +281,7 @@ export default function CompanyDetailPage() {
             {tab === 'discs' && (
               <div className="space-y-2">
                 {activations.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-gray-500">No active discs</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.no_active_discs')}</p>
                 ) : (
                   activations.map((a) => (
                     <div key={a.id} className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 last:border-0 gap-3 flex-wrap">
@@ -294,7 +296,7 @@ export default function CompanyDetailPage() {
                       <div className="flex items-center gap-3">
                         <WearBadge pct={a.wear_pct} expired={a.status === 'EXPIRED_W1'} />
                         <span className="text-xs text-gray-400 dark:text-gray-500">
-                          Expires {new Date(a.expires_at).toLocaleDateString()}
+                          {t('company_detail.expires')} {new Date(a.expires_at).toLocaleDateString()}
                         </span>
                         <StatusBadge status={a.status} />
                       </div>
@@ -306,14 +308,14 @@ export default function CompanyDetailPage() {
 
             {/* SAT HISTORY TAB */}
             {tab === 'sat' && (
-              <p className="text-sm text-gray-400 dark:text-gray-500">SAT history available in Day 11.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.sat_coming')}</p>
             )}
 
             {/* AUDIT TRAIL TAB */}
             {tab === 'audit' && (
               <div className="space-y-1">
                 {auditLogs.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-gray-500">No audit records</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.no_audit')}</p>
                 ) : (
                   auditLogs.map((log) => (
                     <div key={log.id} className="py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
@@ -324,15 +326,15 @@ export default function CompanyDetailPage() {
                         </span>
                       </div>
                       {log.actor_email && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">by {log.actor_email}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('company_detail.audit_by')} {log.actor_email}</p>
                       )}
                       {(log.old_values || log.new_values) && (
                         <div className="mt-1.5 flex gap-4 text-xs text-gray-400 dark:text-gray-500 flex-wrap">
                           {log.old_values && (
-                            <span>Before: <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">{JSON.stringify(log.old_values)}</code></span>
+                            <span>{t('company_detail.audit_before')} <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">{JSON.stringify(log.old_values)}</code></span>
                           )}
                           {log.new_values && (
-                            <span>After: <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">{JSON.stringify(log.new_values)}</code></span>
+                            <span>{t('company_detail.audit_after')} <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">{JSON.stringify(log.new_values)}</code></span>
                           )}
                         </div>
                       )}
