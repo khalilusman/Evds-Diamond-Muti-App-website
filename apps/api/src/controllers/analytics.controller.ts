@@ -48,6 +48,18 @@ export async function summary(_req: Request, res: Response, next: NextFunction):
 
     const activationRate = totalLabels > 0 ? Math.round((activatedLabels / totalLabels) * 100) : 0
 
+    const firstPending = await prisma.company.findFirst({
+      where: { status: 'PENDING' },
+      orderBy: { created_at: 'asc' },
+      select: { id: true, name: true },
+    })
+
+    const oldestTicket = await prisma.satTicket.findFirst({
+      where: { status: { in: ['OPEN', 'IN_REVIEW'] } },
+      orderBy: { created_at: 'asc' },
+      include: { company: { select: { name: true } } },
+    })
+
     res.json({
       data: {
         active_companies: activeCompanies,
@@ -55,9 +67,13 @@ export async function summary(_req: Request, res: Response, next: NextFunction):
         discs_in_field: discsInField,
         open_sat_tickets: openTickets,
         wear_alerts: wearAlerts,
-        new_registrations_this_week: newRegistrations,
-        total_labels_generated: totalLabels,
+        new_this_week: newRegistrations,
+        labels_generated: totalLabels,
         activation_rate_pct: activationRate,
+        first_pending_company: firstPending ?? null,
+        oldest_open_ticket: oldestTicket
+          ? { id: oldestTicket.id, symptom_code: oldestTicket.symptom_code, company_name: oldestTicket.company.name, created_at: oldestTicket.created_at.toISOString() }
+          : null,
       },
     })
   } catch (err) {

@@ -10,7 +10,11 @@ import CompanyDetailPage from '../pages/companies/CompanyDetailPage'
 import DiscsPage from '../pages/discs/DiscsPage'
 import LabelsPage from '../pages/labels/LabelsPage'
 import ProfilePage from '../pages/profile/ProfilePage'
-import DashboardLayout from '../layouts/DashboardLayout'
+import SatPage from '../pages/sat/SatPage'
+import AnalyticsPage from '../pages/analytics/AnalyticsPage'
+import SecurityPage from '../pages/security/SecurityPage'
+import StaffPage from '../pages/staff/StaffPage'
+import QrPage from '../pages/qr/QrPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuthStore()
@@ -19,16 +23,10 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-function Placeholder({ title }: { title: string }) {
-  return (
-    <DashboardLayout title={title}>
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="text-5xl mb-4">🚧</div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h2>
-        <p className="text-sm text-gray-400 dark:text-gray-500">Coming in Day 11</p>
-      </div>
-    </DashboardLayout>
-  )
+function AdminOnly({ children }: { children: ReactNode }) {
+  const { user } = useAuthStore()
+  if (user?.role !== 'EVDS_ADMIN') return <Navigate to="/" replace />
+  return <>{children}</>
 }
 
 export default function AppRouter() {
@@ -40,14 +38,13 @@ export default function AppRouter() {
       <Route path="/companies" element={<RequireAuth><CompaniesPage /></RequireAuth>} />
       <Route path="/companies/:id" element={<RequireAuth><CompanyDetailPage /></RequireAuth>} />
       <Route path="/discs" element={<RequireAuth><DiscsPage /></RequireAuth>} />
-      <Route path="/labels"   element={<RequireAuth><LabelsPage /></RequireAuth>} />
-      <Route path="/profile"  element={<RequireAuth><ProfilePage /></RequireAuth>} />
-
-      <Route path="/security"  element={<RequireAuth><Placeholder title="Security Alerts" /></RequireAuth>} />
-      <Route path="/sat"       element={<RequireAuth><Placeholder title="SAT Tickets" /></RequireAuth>} />
-      <Route path="/analytics" element={<RequireAuth><Placeholder title="Analytics" /></RequireAuth>} />
-      <Route path="/staff"     element={<RequireAuth><Placeholder title="EVDS Staff" /></RequireAuth>} />
-      <Route path="/qr"        element={<RequireAuth><Placeholder title="QR Code" /></RequireAuth>} />
+      <Route path="/labels" element={<RequireAuth><LabelsPage /></RequireAuth>} />
+      <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+      <Route path="/sat" element={<RequireAuth><SatPage /></RequireAuth>} />
+      <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
+      <Route path="/security" element={<RequireAuth><SecurityPage /></RequireAuth>} />
+      <Route path="/staff" element={<RequireAuth><AdminOnly><StaffPage /></AdminOnly></RequireAuth>} />
+      <Route path="/qr" element={<RequireAuth><AdminOnly><QrPage /></AdminOnly></RequireAuth>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

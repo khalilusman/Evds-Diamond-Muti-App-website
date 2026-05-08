@@ -247,6 +247,34 @@ export async function resolveTicket(req: Request, res: Response, next: NextFunct
   }
 }
 
+// ─── PATCH /api/sat/:id/status ────────────────────────────────────────────────
+
+export async function updateTicketStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { status } = req.body
+    const allowed = ['OPEN', 'IN_REVIEW', 'ESCALATED']
+    if (!status || !allowed.includes(status)) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: `Status must be one of: ${allowed.join(', ')}` })
+      return
+    }
+
+    const ticket = await prisma.satTicket.findUnique({ where: { id: req.params.id } })
+    if (!ticket) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'Ticket not found' })
+      return
+    }
+
+    const updated = await prisma.satTicket.update({
+      where: { id: req.params.id },
+      data: { status },
+    })
+
+    res.json({ data: updated })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // ─── PATCH /api/sat/:id/escalate ──────────────────────────────────────────────
 
 export async function escalateTicket(req: Request, res: Response, next: NextFunction): Promise<void> {

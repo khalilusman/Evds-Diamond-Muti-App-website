@@ -20,6 +20,7 @@ import satRoutes from './routes/sat.routes'
 import costRoutes from './routes/cost.routes'
 import analyticsRoutes from './routes/analytics.routes'
 import adminRoutes from './routes/admin.routes'
+import qrRoutes from './routes/qr.routes'
 
 const app = express()
 const PORT = process.env.PORT ?? 3000
@@ -80,6 +81,7 @@ app.use('/api/sat', satRoutes)
 app.use('/api/cost', costRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/qr', qrRoutes)
 
 // ─── 404 
 app.use((_req, res) => {

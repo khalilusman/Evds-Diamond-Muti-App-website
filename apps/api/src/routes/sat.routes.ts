@@ -12,6 +12,7 @@ router.get('/', ctrl.listTickets)
 router.get('/:id', ctrl.getTicket)
 router.patch('/:id/resolve', requireRole('EVDS_SUPPORT', 'EVDS_ADMIN'), ctrl.resolveTicket)
 router.patch('/:id/escalate', requireRole('EVDS_SUPPORT', 'EVDS_ADMIN'), ctrl.escalateTicket)
+router.patch('/:id/status', requireRole('EVDS_SUPPORT', 'EVDS_ADMIN'), ctrl.updateTicketStatus)
 router.post('/:id/photos', requireRole('CUSTOMER_ADMIN', 'CUSTOMER_USER'), ctrl.uploadPhotos, ctrl.addPhotos)
 
 export default router
