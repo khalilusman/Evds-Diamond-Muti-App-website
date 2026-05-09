@@ -294,23 +294,32 @@ function MachineDiscList({ machineId }: { machineId: string }) {
       {activations.map((a: MachineActivation) => (
         <div
           key={a.id}
-          className="py-2 border-t border-gray-100 dark:border-gray-800"
+          className="py-2.5 border-t border-gray-100 dark:border-gray-800"
         >
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 flex-wrap">
+            <span className="text-xs font-bold text-gray-900 dark:text-white">
+              {a.label.family.name} {a.label.nominal_diameter}mm
+            </span>
+            <span className="text-xs text-gray-400">·</span>
             <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
               {a.label.unique_code}
             </span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">
-              Ø {a.diameter_at_activation} mm
-            </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {a.label.family.name} · {a.label.lot_number}
+            Lot: {a.label.lot_number}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-            Activated {new Date(a.activated_at).toLocaleDateString()} ·{' '}
-            Exp {new Date(a.expires_at).toLocaleDateString()}
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Expires {new Date(a.expires_at).toLocaleDateString()}
+            </span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+              a.status === 'ACTIVE'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+            }`}>
+              {a.status === 'ACTIVE' ? 'Active' : 'Expired'}
+            </span>
+          </div>
         </div>
       ))}
     </div>

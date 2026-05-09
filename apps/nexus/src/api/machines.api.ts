@@ -17,6 +17,8 @@ export interface MachineActivation {
   label: {
     unique_code: string
     lot_number: string
+    nominal_diameter: number
+    status: string
     family: { name: string }
   }
 }
