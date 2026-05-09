@@ -11,6 +11,7 @@ import CostResultCard from '../../components/CostResultCard'
 import { parseDxfFile, DxfParseResult } from '../../services/dxf.service'
 import { getCostConfig, calculateCost, getCalculations, CostResult, CostCalculation } from '../../api/cost.api'
 import { getActivations } from '../../api/activations.api'
+import { getCatalog, DiscCatalog } from '../../api/catalog.api'
 
 type InputMethod = 'DXF' | 'MANUAL'
 
@@ -236,6 +237,23 @@ export default function CostPage() {
     ? `${selectedActivation.label?.family?.name} ${selectedActivation.label?.nominal_diameter}mm`
     : undefined
 
+  const { data: catalogList = [] } = useQuery({
+    queryKey: [
+      'catalog',
+      selectedActivation?.label?.family?.id,
+      selectedActivation?.material_group,
+      selectedActivation?.label?.nominal_diameter,
+    ],
+    queryFn: () =>
+      getCatalog({
+        family_id: selectedActivation!.label.family.id,
+        material_group: selectedActivation!.material_group ?? undefined,
+        nominal_diameter: selectedActivation!.label.nominal_diameter,
+      }),
+    enabled: !!selectedActivation && !!selectedActivation.material_group,
+  })
+  const catalog: DiscCatalog | null = catalogList[0] ?? null
+
   // When DXF parse succeeds, auto-fill piece count and perimeter
   function handleDxfResult(r: DxfParseResult) {
     setDxfResult(r)
@@ -389,6 +407,19 @@ export default function CostPage() {
                 </option>
               ))}
             </select>
+            {selectedActivation?.material_group && (
+              <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                  Material:
+                </span>
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200">
+                  {selectedActivation.material_group}
+                </span>
+                <span className="text-xs text-blue-400 dark:text-blue-500 ml-auto italic">
+                  from disc
+                </span>
+              </div>
+            )}
           </div>
 
           {/* 2 — Input method toggle */}
@@ -483,6 +514,22 @@ export default function CostPage() {
                 </button>
               ))}
             </div>
+            {catalog && (
+              <div className="grid grid-cols-2 gap-3 mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Recommended feed</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {form.thickness_cm === 2 ? catalog.feed_2cm : catalog.feed_3cm} mm/min
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Expected life</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {form.thickness_cm === 2 ? catalog.life_2cm : catalog.life_3cm} m
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 5 — Economic parameters */}
