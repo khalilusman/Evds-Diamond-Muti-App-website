@@ -77,6 +77,7 @@
       "activate": "Activate Disc",
       "usage": "Usage Log",
       "sat": "Technical Support",
+      "stats": "My Stats",
       "cost": "Cost Calculator",
       "machines": "Machines",
       "history": "History",
@@ -216,7 +217,7 @@
       "energy_cost": "Energy Cost",
       "material_cost": "Material Cost",
       "total": "Total Cost",
-      "cost_per_mm": "Cost per mm",
+      "cost_per_meter": "Cost per meter",
       "cost_per_piece": "Cost per piece",
       "print": "Print Results",
       "save": "Save Calculation"

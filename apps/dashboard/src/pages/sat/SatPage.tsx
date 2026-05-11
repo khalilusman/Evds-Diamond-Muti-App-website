@@ -19,6 +19,11 @@ import {
 const STATUS_TABS = ['All', 'OPEN', 'IN_REVIEW', 'RESOLVED', 'ESCALATED'] as const
 type StatusTab = typeof STATUS_TABS[number]
 
+function formatMaterial(group: string | null): string {
+  if (!group) return '—'
+  return group.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
 function deviationColor(reported: number | null, recommended: number): string {
   if (reported == null) return 'text-gray-400 dark:text-gray-500'
   const pct = Math.abs((reported - recommended) / recommended) * 100
@@ -401,6 +406,8 @@ export default function SatPage() {
                       <th className="text-left px-5 py-3">{t('sat.col_disc')}</th>
                       <th className="text-left px-5 py-3">{t('sat.symptom')}</th>
                       <th className="text-left px-5 py-3">{t('sat.status')}</th>
+                      <th className="text-left px-5 py-3">{t('sat.col_company')}</th>
+                      <th className="hidden sm:table-cell text-left px-5 py-3">{t('sat.col_material')}</th>
                       <th className="text-left px-5 py-3">{t('sat.col_opened')}</th>
                       <th className="text-left px-5 py-3">{t('sat.col_resolved')}</th>
                       <th className="text-right px-5 py-3">{t('sat.col_action')}</th>
@@ -419,6 +426,12 @@ export default function SatPage() {
                           {t(`sat.symptoms.${tk.symptom_code}`, { defaultValue: tk.symptom_code })}
                         </td>
                         <td className="px-5 py-3"><StatusBadge status={tk.status} /></td>
+                        <td className="px-5 py-3">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{tk.activation.company.name}</p>
+                        </td>
+                        <td className="hidden sm:table-cell px-5 py-3 text-sm text-gray-600 dark:text-gray-400">
+                          {formatMaterial(tk.activation.material_group)}
+                        </td>
                         <td className="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">
                           {new Date(tk.created_at).toLocaleDateString()}
                         </td>

@@ -15,6 +15,7 @@ import UsagePage from '../pages/usage/UsagePage'
 import SatPage from '../pages/sat/SatPage'
 import CostPage from '../pages/cost/CostPage'
 import MachinesPage from '../pages/machines/MachinesPage'
+import StatsPage from '../pages/stats/StatsPage'
 import ProfilePage from '../pages/ProfilePage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -130,6 +131,14 @@ export default function AppRouter() {
         element={
           <RequireAuth>
             <CostPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/stats"
+        element={
+          <RequireAuth>
+            <StatsPage />
           </RequireAuth>
         }
       />

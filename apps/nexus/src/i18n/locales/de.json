@@ -77,6 +77,7 @@
       "activate": "Scheibe aktivieren",
       "usage": "Nutzungsprotokoll",
       "sat": "Technischer Support",
+      "stats": "Meine Statistiken",
       "cost": "Kostenkalkulator",
       "machines": "Maschinen",
       "history": "Verlauf",
@@ -216,7 +217,7 @@
       "energy_cost": "Energiekosten",
       "material_cost": "Materialkosten",
       "total": "Gesamtkosten",
-      "cost_per_mm": "Kosten pro mm",
+      "cost_per_meter": "Kosten pro Meter",
       "cost_per_piece": "Kosten pro Stück",
       "print": "Ergebnisse drucken",
       "save": "Berechnung speichern"

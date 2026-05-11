@@ -33,8 +33,9 @@ export interface CostResult {
   material_cost: number
   subtotal: number
   total: number
-  cost_per_mm: number
+  cost_per_meter: number
   cost_per_piece: number
+  total_linear_meters: number
   copies: number
   piece_count: number
   total_perimeter: number
@@ -56,7 +57,10 @@ export function calculateCost(input: CostInput): CostResult {
 
   const subtotal = machine_cost + labor_cost + disc_wear_cost + energy_cost + material_cost
   const total = subtotal * copies
-  const cost_per_mm = total_perimeter * copies > 0 ? total / (total_perimeter * copies) : 0
+  const total_linear_meters = total_perimeter / 1000
+  const cost_per_meter = total_linear_meters * copies > 0
+    ? total / (total_linear_meters * copies)
+    : 0
   const cost_per_piece = piece_count * copies > 0 ? total / (piece_count * copies) : 0
 
   return {
@@ -68,8 +72,9 @@ export function calculateCost(input: CostInput): CostResult {
     material_cost: round(material_cost),
     subtotal: round(subtotal),
     total: round(total),
-    cost_per_mm: round(cost_per_mm, 4),
+    cost_per_meter: round(cost_per_meter, 4),
     cost_per_piece: round(cost_per_piece),
+    total_linear_meters: round(total_linear_meters, 3),
     copies,
     piece_count,
     total_perimeter,

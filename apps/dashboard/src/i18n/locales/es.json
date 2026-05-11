@@ -224,6 +224,8 @@
       "escalate": "Escalar",
       "escalated_default": "Escalado para revisión adicional",
       "col_disc": "Disco",
+      "col_company": "Empresa",
+      "col_material": "Material",
       "col_opened": "Abierto",
       "col_resolved": "Resuelto",
       "col_action": "Acción",

@@ -224,6 +224,8 @@
       "escalate": "Escalate",
       "escalated_default": "Escalated for further review",
       "col_disc": "Disc",
+      "col_company": "Company",
+      "col_material": "Material",
       "col_opened": "Opened",
       "col_resolved": "Resolved",
       "col_action": "Action",

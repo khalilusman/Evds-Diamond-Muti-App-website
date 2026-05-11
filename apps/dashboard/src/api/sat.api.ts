@@ -10,6 +10,8 @@ export interface SatTicketSummary {
   activation: {
     id: string
     diameter_at_activation: number
+    material_group: string | null
+    company: { name: string }
     label: {
       unique_code: string
       nominal_diameter: number

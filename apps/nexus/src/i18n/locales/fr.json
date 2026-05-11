@@ -77,6 +77,7 @@
       "activate": "Activer un disque",
       "usage": "Journal d'utilisation",
       "sat": "Support technique",
+      "stats": "Mes Statistiques",
       "cost": "Calculateur de coûts",
       "machines": "Machines",
       "history": "Historique",
@@ -216,7 +217,7 @@
       "energy_cost": "Coût énergie",
       "material_cost": "Coût matériau",
       "total": "Coût total",
-      "cost_per_mm": "Coût par mm",
+      "cost_per_meter": "Coût par mètre",
       "cost_per_piece": "Coût par pièce",
       "print": "Imprimer les résultats",
       "save": "Enregistrer le calcul"

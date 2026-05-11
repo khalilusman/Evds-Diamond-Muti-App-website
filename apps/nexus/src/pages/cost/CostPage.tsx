@@ -17,22 +17,30 @@ type InputMethod = 'DXF' | 'MANUAL'
 
 interface FormState {
   activation_id: string
-  piece_count: string
-  total_perimeter: string
+  linear_meters: string
   material_price: string
   disc_price: string
   copies: string
   thickness_cm: 2 | 3
+  machine_cost_hour: string
+  labor_cost_hour: string
+  energy_cost_kwh: string
+  downtime_pct: string
+  waste_pct: string
 }
 
 const defaultForm = (): FormState => ({
   activation_id: '',
-  piece_count: '',
-  total_perimeter: '',
+  linear_meters: '',
   material_price: '',
   disc_price: '',
   copies: '1',
   thickness_cm: 2,
+  machine_cost_hour: '',
+  labor_cost_hour: '',
+  energy_cost_kwh: '',
+  downtime_pct: '',
+  waste_pct: '',
 })
 
 // ─── DXF Upload Zone ──────────────────────────────────────────────────────────
@@ -107,6 +115,7 @@ function DxfUploadZone({
           ref={inputRef}
           type="file"
           accept=".dxf"
+          title="Upload DXF file"
           className="hidden"
           onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
         />
@@ -118,6 +127,7 @@ function DxfUploadZone({
 // ─── DXF Result Preview ───────────────────────────────────────────────────────
 
 function DxfResultBox({ result }: { result: DxfParseResult }) {
+  const linearMeters = (result.totalPerimeter / 1000).toFixed(3)
   return (
     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
@@ -125,25 +135,19 @@ function DxfResultBox({ result }: { result: DxfParseResult }) {
         <p className="font-semibold text-green-700 dark:text-green-400 text-sm">
           {result.pieceCount} piece{result.pieceCount !== 1 ? 's' : ''} detected
         </p>
-        <p className="text-xs text-green-600 dark:text-green-500 ml-auto">
-          Total: {result.totalPerimeter.toFixed(1)}mm
-        </p>
       </div>
-      {result.pieces.length <= 10 && (
-        <div className="space-y-1 max-h-32 overflow-y-auto">
-          {result.pieces.map((p) => (
-            <div key={p.id} className="flex justify-between text-xs text-green-700 dark:text-green-400">
-              <span>Piece {p.id}</span>
-              <span>{p.perimeter.toFixed(1)}mm</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {result.pieces.length > 10 && (
-        <p className="text-xs text-green-600 dark:text-green-500">
-          {result.pieces.length} pieces (showing summary only)
-        </p>
-      )}
+      <div className="space-y-1 max-h-40 overflow-y-auto mb-3">
+        {result.pieces.map((p) => (
+          <div key={p.id} className="flex justify-between text-xs text-green-700 dark:text-green-400">
+            <span>Piece {p.id}</span>
+            <span>{Math.round(p.perimeter).toLocaleString()}mm</span>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-green-200 dark:border-green-800 pt-2 flex justify-between text-sm font-semibold text-green-800 dark:text-green-300">
+        <span>Total</span>
+        <span>{Math.round(result.totalPerimeter).toLocaleString()}mm ({linearMeters} linear meters)</span>
+      </div>
     </div>
   )
 }
@@ -217,6 +221,19 @@ export default function CostPage() {
     }
   }, [activations])
 
+  useEffect(() => {
+    if (costConfig) {
+      setForm((f) => ({
+        ...f,
+        machine_cost_hour: String(costConfig.machine_cost_hour),
+        labor_cost_hour:   String(costConfig.labor_cost_hour),
+        energy_cost_kwh:   String(costConfig.energy_cost_kwh),
+        downtime_pct:      String(costConfig.downtime_pct),
+        waste_pct:         String(costConfig.waste_pct),
+      }))
+    }
+  }, [costConfig])
+
   // Auto-fill disc price from config when config loads
   const discPriceDefault = costConfig?.default_disc_price?.toString() ?? ''
 
@@ -254,25 +271,21 @@ export default function CostPage() {
   })
   const catalog: DiscCatalog | null = catalogList[0] ?? null
 
-  // When DXF parse succeeds, auto-fill piece count and perimeter
   function handleDxfResult(r: DxfParseResult) {
     setDxfResult(r)
-    setForm((f) => ({
-      ...f,
-      piece_count: String(r.pieceCount),
-      total_perimeter: String(r.totalPerimeter),
-    }))
   }
 
   function validate(): boolean {
     const e: typeof errors = {}
-    const pCount = Number(form.piece_count)
-    const pPerim = Number(form.total_perimeter)
     const mPrice = Number(form.material_price)
     const copies = Number(form.copies)
 
-    if (!form.piece_count || pCount <= 0) e.piece_count = 'Must be a positive number'
-    if (!form.total_perimeter || pPerim <= 0) e.total_perimeter = 'Must be a positive number'
+    if (inputMethod === 'DXF') {
+      if (!dxfResult || dxfResult.pieceCount === 0) e.linear_meters = 'Upload a valid DXF file first'
+    } else {
+      const lm = Number(form.linear_meters)
+      if (!form.linear_meters || lm <= 0) e.linear_meters = 'Must be a positive number'
+    }
     if (!form.material_price || mPrice < 0) e.material_price = 'Required'
     if (!form.copies || copies <= 0) e.copies = 'Must be at least 1'
     setErrors(e)
@@ -282,16 +295,32 @@ export default function CostPage() {
   const calcMut = useMutation({
     mutationFn: () => {
       if (!costConfig) throw new Error('NO_COST_CONFIG')
-      return calculateCost({
+      const common = {
         activation_id: form.activation_id || undefined,
-        input_method: inputMethod,
-        piece_count: Number(form.piece_count),
-        total_perimeter: Number(form.total_perimeter),
         material_price: Number(form.material_price),
         disc_price: form.disc_price ? Number(form.disc_price) : undefined,
         copies: Number(form.copies),
         thickness_cm: form.thickness_cm,
-      })
+        machine_cost_hour: form.machine_cost_hour ? Number(form.machine_cost_hour) : undefined,
+        labor_cost_hour:   form.labor_cost_hour   ? Number(form.labor_cost_hour)   : undefined,
+        energy_cost_kwh:   form.energy_cost_kwh   ? Number(form.energy_cost_kwh)   : undefined,
+        downtime_pct:      form.downtime_pct      ? Number(form.downtime_pct)      : undefined,
+        waste_pct:         form.waste_pct         ? Number(form.waste_pct)         : undefined,
+      }
+      if (inputMethod === 'DXF') {
+        return calculateCost({
+          ...common,
+          input_method: 'DXF',
+          piece_count: dxfResult!.pieceCount,
+          total_perimeter: dxfResult!.totalPerimeter,
+        })
+      } else {
+        return calculateCost({
+          ...common,
+          input_method: 'MANUAL',
+          total_linear_meters: Number(form.linear_meters),
+        })
+      }
     },
     onSuccess: (data) => {
       setResult(data)
@@ -319,7 +348,16 @@ export default function CostPage() {
 
   function handleReset() {
     setResult(null)
-    setForm(defaultForm())
+    setForm({
+      ...defaultForm(),
+      ...(costConfig ? {
+        machine_cost_hour: String(costConfig.machine_cost_hour),
+        labor_cost_hour:   String(costConfig.labor_cost_hour),
+        energy_cost_kwh:   String(costConfig.energy_cost_kwh),
+        downtime_pct:      String(costConfig.downtime_pct),
+        waste_pct:         String(costConfig.waste_pct),
+      } : {}),
+    })
     setDxfResult(null)
     setErrors({})
   }
@@ -370,6 +408,7 @@ export default function CostPage() {
           <CostResultCard
             result={result}
             discLabel={discLabel}
+            materialGroup={selectedActivation?.material_group ?? undefined}
             thickness={form.thickness_cm}
             inputMethod={inputMethod}
             onReset={handleReset}
@@ -454,41 +493,26 @@ export default function CostPage() {
             <div className="space-y-3">
               <DxfUploadZone onResult={handleDxfResult} onError={() => setInputMethod('MANUAL')} />
               {dxfResult && <DxfResultBox result={dxfResult} />}
-              {dxfResult && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label={t('cost.piece_count')}
-                    type="number"
-                    min="1"
-                    {...field('piece_count')}
-                  />
-                  <Input
-                    label={`${t('cost.total_perimeter')} (mm)`}
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    {...field('total_perimeter')}
-                  />
-                </div>
+              {errors.linear_meters && (
+                <p className="text-xs text-red-500">{errors.linear_meters}</p>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
               <Input
-                label={t('cost.piece_count')}
-                type="number"
-                min="1"
-                placeholder="5"
-                {...field('piece_count')}
-              />
-              <Input
-                label={`${t('cost.total_perimeter')} (mm)`}
+                label="Total Linear Meters (m)"
                 type="number"
                 min="0"
-                step="0.1"
-                placeholder="2500"
-                {...field('total_perimeter')}
+                step="0.001"
+                placeholder="e.g. 22.000"
+                {...field('linear_meters')}
               />
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Enter total linear meters to cut
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                Example: 22.000 linear meters of granite cut with V-ARRAY 450mm
+              </p>
             </div>
           )}
 
@@ -578,26 +602,17 @@ export default function CostPage() {
                   {showAdvanced ? '▲ Hide' : '▼ Show'} advanced settings
                 </button>
                 {showAdvanced && (
-                  <div className="mt-3 grid grid-cols-2 gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs text-gray-500 dark:text-gray-400">
-                    {[
-                      { label: 'Machine Cost (€/h)', value: costConfig.machine_cost_hour },
-                      { label: 'Labor Cost (€/h)', value: costConfig.labor_cost_hour },
-                      { label: 'Energy Cost (€/kWh)', value: costConfig.energy_cost_kwh },
-                      { label: 'Downtime %', value: costConfig.downtime_pct },
-                      { label: 'Waste %', value: costConfig.waste_pct },
-                    ].map(({ label, value }) => (
-                      <div key={label}>
-                        <p className="text-gray-400 dark:text-gray-500">{label}</p>
-                        <p className="font-medium text-gray-700 dark:text-gray-300">
-                          {value}
-                        </p>
-                      </div>
-                    ))}
-                    <div className="col-span-2">
-                      <p className="text-[10px] text-gray-400 dark:text-gray-600">
-                        To change these values, update your cost configuration in the Profile page.
-                      </p>
+                  <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Machine Cost (€/h)"  type="number" min="0" step="0.01"  {...field('machine_cost_hour')} />
+                      <Input label="Labor Cost (€/h)"    type="number" min="0" step="0.01"  {...field('labor_cost_hour')} />
+                      <Input label="Energy Cost (€/kWh)" type="number" min="0" step="0.001" {...field('energy_cost_kwh')} />
+                      <Input label="Downtime %"          type="number" min="0" max="100"    {...field('downtime_pct')} />
+                      <Input label="Waste %"             type="number" min="0" max="100"    {...field('waste_pct')} />
                     </div>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                      These values are pre-filled from your profile settings. Changes here only affect this calculation.
+                    </p>
                   </div>
                 )}
               </div>

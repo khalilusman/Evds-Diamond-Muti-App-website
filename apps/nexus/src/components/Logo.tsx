@@ -12,7 +12,7 @@ const sizeMap = {
 export default function Logo({ size = 'md', className = '' }: LogoProps) {
   return (
     <img
-      src="/evds-logo.png"
+      src="/logo_evds_nexus.png"
       alt="EVDS Diamond"
       className={`${sizeMap[size]} w-auto object-contain ${className}`}
     />

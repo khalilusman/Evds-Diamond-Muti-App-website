@@ -5,6 +5,7 @@ import { CostResult } from '../api/cost.api'
 interface CostResultCardProps {
   result: CostResult
   discLabel?: string
+  materialGroup?: string
   thickness: 2 | 3
   inputMethod: 'DXF' | 'MANUAL'
   onReset: () => void
@@ -47,6 +48,7 @@ function handlePrint() {
 export default function CostResultCard({
   result,
   discLabel,
+  materialGroup,
   thickness,
   inputMethod,
   onReset,
@@ -66,7 +68,7 @@ export default function CostResultCard({
     <div id="cost-print-section" className="space-y-5">
       {/* Print header — hidden on screen */}
       <div className="hidden print:block mb-4">
-        <img src="/evds-logo.png" alt="EVDS" className="h-10 mb-2" />
+        <img src="/logo_evds_nexus.png" alt="EVDS" className="h-10 mb-2" />
         <h1 className="text-xl font-bold">{t('cost.results_title')}</h1>
         <p className="text-sm text-gray-500">{now.toLocaleString()}</p>
         {discLabel && <p className="text-sm text-gray-600">Disc: {discLabel}</p>}
@@ -89,7 +91,7 @@ export default function CostResultCard({
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: t('cost.total'), value: `€${fmt(result.total)}`, highlight: true },
-          { label: t('cost.cost_per_mm'), value: `€${result.cost_per_mm.toFixed(4)}` },
+          { label: t('cost.cost_per_meter'), value: `€${result.cost_per_meter.toFixed(4)}/m` },
           { label: t('cost.cost_per_piece'), value: `€${fmt(result.cost_per_piece)}` },
         ].map(({ label, value, highlight }) => (
           <div
@@ -167,9 +169,11 @@ export default function CostResultCard({
 
       {/* Input summary */}
       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
-        <span>Pieces: <strong className="text-gray-700 dark:text-gray-300">{result.piece_count}</strong></span>
-        <span>Perimeter: <strong className="text-gray-700 dark:text-gray-300">{result.total_perimeter}mm</strong></span>
+        <span>Linear Meters: <strong className="text-gray-700 dark:text-gray-300">{result.total_linear_meters.toFixed(3)} m</strong></span>
         <span>Thickness: <strong className="text-gray-700 dark:text-gray-300">{thickness}cm</strong></span>
+        {materialGroup && (
+          <span>Material: <strong className="text-gray-700 dark:text-gray-300">{materialGroup}</strong></span>
+        )}
         {result.copies > 1 && (
           <span>Copies: <strong className="text-gray-700 dark:text-gray-300">{result.copies}</strong></span>
         )}

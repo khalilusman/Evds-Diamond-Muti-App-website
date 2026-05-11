@@ -99,16 +99,32 @@ export async function createOrUpdateConfig(req: Request, res: Response, next: Ne
 // POST /api/cost/calculate
 export async function calculate(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { activation_id, input_method, piece_count, total_perimeter, material_price, disc_price, copies, thickness_cm } = req.body
+    const { activation_id, input_method, piece_count, total_perimeter, total_linear_meters, material_price, disc_price, copies, thickness_cm, machine_cost_hour, labor_cost_hour, energy_cost_kwh, downtime_pct, waste_pct } = req.body
 
-    if (!input_method || piece_count === undefined || total_perimeter === undefined || material_price === undefined || copies === undefined || thickness_cm === undefined) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'input_method, piece_count, total_perimeter, material_price, copies, thickness_cm are required' })
-      return
-    }
-    if (!['DXF', 'MANUAL', 'dxf', 'manual'].includes(input_method)) {
+    if (!input_method || !['DXF', 'MANUAL', 'dxf', 'manual'].includes(input_method)) {
       res.status(400).json({ error: 'VALIDATION_ERROR', message: 'input_method must be DXF or MANUAL' })
       return
     }
+    if (material_price === undefined || copies === undefined || thickness_cm === undefined) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'material_price, copies, thickness_cm are required' })
+      return
+    }
+
+    const isManual = input_method.toUpperCase() === 'MANUAL'
+
+    if (isManual && total_linear_meters === undefined) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'total_linear_meters is required for MANUAL input' })
+      return
+    }
+    if (!isManual && (piece_count === undefined || total_perimeter === undefined)) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'piece_count and total_perimeter are required for DXF input' })
+      return
+    }
+
+    const effectivePerimeter = isManual
+      ? Number(total_linear_meters) * 1000
+      : Number(total_perimeter)
+    const effectivePieceCount = isManual ? 1 : Number(piece_count)
 
     const costConfig = await prisma.costConfig.findUnique({ where: { company_id: req.user!.companyId! } })
     if (!costConfig) {
@@ -122,17 +138,12 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
         where: { id: activation_id },
         include: { label: true },
       })
-      if (activation) {
-        const lastLog = await prisma.usageLog.findFirst({
-          where: { activation_id },
-          orderBy: { logged_at: 'desc' },
-          select: { material_group: true },
-        })
+      if (activation?.material_group) {
         catalogParams = await prisma.discCatalog.findFirst({
           where: {
             family_id: activation.label.family_id,
             nominal_diameter: activation.label.nominal_diameter,
-            ...(lastLog?.material_group ? { material_group: lastLog.material_group } : {}),
+            material_group: activation.material_group,
           },
         })
       }
@@ -141,18 +152,18 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
     const effectiveDiscPrice = Number(disc_price ?? costConfig.default_disc_price)
 
     const result = calculateCost({
-      piece_count: Number(piece_count),
-      total_perimeter: Number(total_perimeter),
+      piece_count: effectivePieceCount,
+      total_perimeter: effectivePerimeter,
       material_price: Number(material_price),
       disc_price: effectiveDiscPrice,
       copies: Number(copies),
       thickness_cm: Number(thickness_cm) === 3 ? 3 : 2,
       config: {
-        machine_cost_hour: Number(costConfig.machine_cost_hour),
-        labor_cost_hour: Number(costConfig.labor_cost_hour),
-        energy_cost_kwh: Number(costConfig.energy_cost_kwh),
-        downtime_pct: Number(costConfig.downtime_pct),
-        waste_pct: Number(costConfig.waste_pct),
+        machine_cost_hour: machine_cost_hour !== undefined ? Number(machine_cost_hour) : Number(costConfig.machine_cost_hour),
+        labor_cost_hour:   labor_cost_hour   !== undefined ? Number(labor_cost_hour)   : Number(costConfig.labor_cost_hour),
+        energy_cost_kwh:   energy_cost_kwh   !== undefined ? Number(energy_cost_kwh)   : Number(costConfig.energy_cost_kwh),
+        downtime_pct:      downtime_pct      !== undefined ? Number(downtime_pct)      : Number(costConfig.downtime_pct),
+        waste_pct:         waste_pct         !== undefined ? Number(waste_pct)         : Number(costConfig.waste_pct),
       },
       catalog: catalogParams,
     })
@@ -162,8 +173,8 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
         company_id: req.user!.companyId!,
         activation_id: activation_id ?? null,
         input_method: input_method.toUpperCase() as 'DXF' | 'MANUAL',
-        piece_count: Number(piece_count),
-        total_perimeter: Number(total_perimeter),
+        piece_count: effectivePieceCount,
+        total_perimeter: effectivePerimeter,
         result_json: result as object,
       },
     })
