@@ -42,7 +42,7 @@
       "login_title": "Bentornato",
       "login_subtitle": "Accedi al tuo account EVDS",
       "register_title": "Crea il tuo account",
-      "register_subtitle": "Unisciti alla piattaforma EVDS Diamond"
+      "register_subtitle": "Unisciti alla piattaforma EVDS Nexus"
     },
     "registration": {
       "company_name": "Nome azienda",
@@ -67,7 +67,7 @@
       "step1_title": "Configurazione costi",
       "step2_title": "Crea la tua prima macchina",
       "complete_title": "Configurazione completata",
-      "complete_message": "Sei pronto per iniziare a usare EVDS Diamond",
+      "complete_message": "Sei pronto per iniziare a usare EVDS Nexus",
       "machine_name": "Nome macchina",
       "machine_placeholder": "es. Donatoni Jet, Filo diamantato 1"
     },

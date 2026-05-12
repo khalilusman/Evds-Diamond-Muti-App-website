@@ -5,9 +5,6 @@ import { CostResult } from '../api/cost.api'
 interface CostResultCardProps {
   result: CostResult
   discLabel?: string
-  materialGroup?: string
-  thickness: 2 | 3
-  inputMethod: 'DXF' | 'MANUAL'
   onReset: () => void
 }
 
@@ -45,28 +42,13 @@ function handlePrint() {
   }, { once: true })
 }
 
-export default function CostResultCard({
-  result,
-  discLabel,
-  materialGroup,
-  thickness,
-  inputMethod,
-  onReset,
-}: CostResultCardProps) {
+export default function CostResultCard({ result, discLabel, onReset }: CostResultCardProps) {
   const { t } = useTranslation()
   const now = new Date()
 
-  const breakdownRows = [
-    { label: t('cost.machine_cost'), value: result.machine_cost, colored: true },
-    { label: t('cost.labor_cost'), value: result.labor_cost, colored: true },
-    { label: t('cost.disc_wear'), value: result.disc_wear_cost, colored: true },
-    { label: t('cost.energy_cost'), value: result.energy_cost, colored: true },
-    { label: t('cost.material_cost'), value: result.material_cost, colored: true },
-  ]
-
   return (
     <div id="cost-print-section" className="space-y-5">
-      {/* Print header — hidden on screen */}
+      {/* Print header */}
       <div className="hidden print:block mb-4">
         <img src="/logo_evds_nexus.png" alt="EVDS" className="h-10 mb-2" />
         <h1 className="text-xl font-bold">{t('cost.results_title')}</h1>
@@ -81,36 +63,22 @@ export default function CostResultCard({
             {t('cost.results_title')}
           </h2>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-            {now.toLocaleDateString()} · {inputMethod} input
+            {now.toLocaleDateString()}
             {discLabel && ` · ${discLabel}`}
           </p>
         </div>
       </div>
 
-      {/* Big 3 summary */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: t('cost.total'), value: `€${fmt(result.total)}`, highlight: true },
-          { label: t('cost.cost_per_meter'), value: `€${result.cost_per_meter.toFixed(4)}/m` },
-          { label: t('cost.cost_per_piece'), value: `€${fmt(result.cost_per_piece)}` },
-        ].map(({ label, value, highlight }) => (
-          <div
-            key={label}
-            className={[
-              'rounded-2xl p-4 text-center',
-              highlight
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white',
-            ].join(' ')}
-          >
-            <p className={`text-lg font-bold leading-tight ${highlight ? 'text-white' : ''}`}>
-              {value}
-            </p>
-            <p className={`text-xs mt-0.5 ${highlight ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
-              {label}
-            </p>
-          </div>
-        ))}
+      {/* Big 2-card summary */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl p-5 text-center bg-blue-600 text-white">
+          <p className="text-2xl font-bold leading-tight">€{fmt(result.total)}</p>
+          <p className="text-xs mt-1 text-blue-100">{t('cost.total')}</p>
+        </div>
+        <div className="rounded-2xl p-5 text-center bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
+          <p className="text-2xl font-bold leading-tight">€{result.cost_per_lm.toFixed(4)}</p>
+          <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">{t('cost.cost_per_meter')}</p>
+        </div>
       </div>
 
       {/* Breakdown table */}
@@ -118,46 +86,37 @@ export default function CostResultCard({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              <th className="text-left px-4 py-3 font-medium">Item</th>
+              <th className="text-left px-4 py-3 font-medium">Cost component</th>
               <th className="text-right px-4 py-3 font-medium">Amount</th>
               <th className="text-right px-4 py-3 font-medium">% of total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            <tr className="bg-gray-50/50 dark:bg-gray-800/50">
-              <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">
-                {t('cost.cutting_time')}
-              </td>
-              <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">
-                {result.cutting_time_min.toFixed(1)} min
-              </td>
-              <td className="px-4 py-2.5 text-right text-gray-400">—</td>
+            <tr>
+              <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{t('cost.disc_wear')}</td>
+              <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">€{fmt(result.disc_cost)}</td>
+              <td className="px-4 py-2.5 text-right text-gray-400">{pct(result.disc_cost, result.total)}</td>
             </tr>
-            {breakdownRows.map(({ label, value }) => (
-              <tr key={label}>
-                <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{label}</td>
-                <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">
-                  €{fmt(value)}
-                </td>
-                <td className="px-4 py-2.5 text-right text-gray-400">
-                  {pct(value, result.subtotal)}
-                </td>
-              </tr>
-            ))}
-            <tr className="bg-gray-50 dark:bg-gray-800/50 font-semibold">
-              <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">Subtotal</td>
-              <td className="px-4 py-2.5 text-right text-gray-900 dark:text-white">
-                €{fmt(result.subtotal)}
-              </td>
-              <td className="px-4 py-2.5 text-right text-gray-400">—</td>
+            <tr>
+              <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{t('cost.machine_cost')}</td>
+              <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">€{fmt(result.machine_cost)}</td>
+              <td className="px-4 py-2.5 text-right text-gray-400">{pct(result.machine_cost, result.total)}</td>
             </tr>
-            {result.copies > 1 && (
-              <tr className="text-gray-500 dark:text-gray-400 text-xs">
-                <td colSpan={3} className="px-4 py-1.5 text-center">
-                  × {result.copies} copies
-                </td>
-              </tr>
-            )}
+            <tr>
+              <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">Labor</td>
+              <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">€{fmt(result.labor_cost)}</td>
+              <td className="px-4 py-2.5 text-right text-gray-400">{pct(result.labor_cost, result.total)}</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">Energy</td>
+              <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">€{fmt(result.energy_cost)}</td>
+              <td className="px-4 py-2.5 text-right text-gray-400">{pct(result.energy_cost, result.total)}</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">Material</td>
+              <td className="px-4 py-2.5 text-right font-medium text-gray-900 dark:text-white">€{fmt(result.material_cost)}</td>
+              <td className="px-4 py-2.5 text-right text-gray-400">{pct(result.material_cost, result.total)}</td>
+            </tr>
             <tr className="bg-blue-50 dark:bg-blue-900/20 font-bold text-blue-700 dark:text-blue-300">
               <td className="px-4 py-3">{t('cost.total')}</td>
               <td className="px-4 py-3 text-right">€{fmt(result.total)}</td>
@@ -167,19 +126,53 @@ export default function CostResultCard({
         </table>
       </div>
 
-      {/* Input summary */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
-        <span>Linear Meters: <strong className="text-gray-700 dark:text-gray-300">{result.total_linear_meters.toFixed(3)} m</strong></span>
-        <span>Thickness: <strong className="text-gray-700 dark:text-gray-300">{thickness}cm</strong></span>
-        {materialGroup && (
-          <span>Material: <strong className="text-gray-700 dark:text-gray-300">{materialGroup}</strong></span>
-        )}
-        {result.copies > 1 && (
-          <span>Copies: <strong className="text-gray-700 dark:text-gray-300">{result.copies}</strong></span>
-        )}
-        {discLabel && (
-          <span>Disc: <strong className="text-gray-700 dark:text-gray-300">{discLabel}</strong></span>
-        )}
+      {/* Operating parameters */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+          Operating Parameters
+        </p>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Linear meters</span>
+            <span className="font-medium text-gray-900 dark:text-white">{result.metres_to_cut.toFixed(3)} m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Cutting time</span>
+            <span className="font-medium text-gray-900 dark:text-white">{result.time_minutes.toFixed(1)} min</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Feed rate</span>
+            <span className="font-medium text-gray-900 dark:text-white">{result.feed_used} mm/min</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Disc life reference</span>
+            <span className="font-medium text-gray-900 dark:text-white">{result.life_used} m</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Disc consumed</span>
+            <span className="font-medium text-gray-900 dark:text-white">{(result.disc_fraction * 100).toFixed(1)}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Machine rate</span>
+            <span className="font-medium text-gray-900 dark:text-white">€{fmt(result.machine_cost_hour)}/h</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Labor rate</span>
+            <span className="font-medium text-gray-900 dark:text-white">€{fmt(result.labor_cost_hour)}/h</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Energy rate</span>
+            <span className="font-medium text-gray-900 dark:text-white">€{result.energy_cost_kwh.toFixed(4)}/kWh</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Downtime</span>
+            <span className="font-medium text-gray-900 dark:text-white">{result.downtime_pct}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 dark:text-gray-400">Waste</span>
+            <span className="font-medium text-gray-900 dark:text-white">{result.waste_pct}%</span>
+          </div>
+        </div>
       </div>
 
       {/* Actions */}

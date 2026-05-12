@@ -86,11 +86,14 @@ function DiagnosisCard({
   const [photosUploaded, setPhotosUploaded] = useState(ticket.photo_urls.length > 0)
   const [showUpload, setShowUpload] = useState(false)
 
-  const thickness = ticket.activation?.thickness_cm ?? 2
+  const thickness = ticket.activation?.thickness ?? 2.0
+  const useT2 = ticket.catalog_params
+    ? Math.abs(Number(ticket.catalog_params.feed_t2) - thickness) < 0.01
+    : false
   const catalogFeed = ticket.catalog_params
-    ? (thickness === 3 ? ticket.catalog_params.feed_3cm : ticket.catalog_params.feed_2cm)
+    ? (useT2 ? ticket.catalog_params.feed_t2 : ticket.catalog_params.feed_t1)
     : null
-  const catalogRpm = ticket.catalog_params?.recommended_rpm ?? null
+  const catalogRpm = ticket.catalog_params?.rpm ?? null
 
   function handlePhotosDone(urls: string[]) {
     onUploadComplete(urls)
@@ -250,20 +253,23 @@ function ReportIssueTab() {
     queryKey: [
       'catalog',
       selectedActivation?.label?.family?.id,
-      selectedActivation?.material_group,
+      selectedActivation?.material_type,
       selectedActivation?.label?.nominal_diameter,
     ],
     queryFn: () =>
       getCatalog({
         family_id: selectedActivation!.label.family.id,
-        material_group: selectedActivation!.material_group ?? undefined,
+        material_type: selectedActivation!.material_type ?? undefined,
         nominal_diameter: selectedActivation!.label.nominal_diameter,
       }),
     enabled: !!selectedActivation,
   })
   const catalog = catalogList[0]
+  const useT2 = catalog && selectedActivation
+    ? Math.abs(Number(catalog.thickness_t2) - (selectedActivation.thickness ?? 2.0)) < 0.01
+    : false
   const catalogFeed = catalog
-    ? (selectedActivation?.thickness_cm === 3 ? catalog.feed_3cm : catalog.feed_2cm)
+    ? (useT2 ? catalog.feed_t2 : catalog.feed_t1)
     : null
 
   // Pre-select from URL
@@ -435,14 +441,14 @@ function ReportIssueTab() {
             <Input
               label={t('sat.rpm_reported')}
               type="number"
-              placeholder={catalog ? String(catalog.recommended_rpm) : '0'}
+              placeholder={catalog ? String(catalog.rpm) : '0'}
               min="0"
               value={form.rpm_reported}
               onChange={(e) => setForm((f) => ({ ...f, rpm_reported: e.target.value }))}
             />
             {catalog && (
               <p className="mt-1 text-xs text-gray-400">
-                Catalog recommends: {catalog.recommended_rpm} RPM
+                Catalog recommends: {catalog.rpm} RPM
               </p>
             )}
           </div>

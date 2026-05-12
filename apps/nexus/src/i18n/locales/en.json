@@ -42,7 +42,7 @@
       "login_title": "Welcome back",
       "login_subtitle": "Sign in to your EVDS account",
       "register_title": "Create your account",
-      "register_subtitle": "Join EVDS Diamond platform"
+      "register_subtitle": "Join EVDS Nexus platform"
     },
     "registration": {
       "company_name": "Company Name",
@@ -67,7 +67,7 @@
       "step1_title": "Cost Configuration",
       "step2_title": "Create Your First Machine",
       "complete_title": "Setup Complete",
-      "complete_message": "You are ready to start using EVDS Diamond",
+      "complete_message": "You are ready to start using EVDS Nexus",
       "machine_name": "Machine Name",
       "machine_placeholder": "e.g. Donatoni Jet, Bridge Saw 1"
     },

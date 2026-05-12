@@ -24,8 +24,8 @@ export interface CreateUsageLogData {
   activation_id: string
   current_diameter: number
   meters_cut: number
-  thickness_cm: number
-  material_group: string
+  thickness: number
+  material_type: string
   rpm_used?: number | null
   feed_used?: number | null
   cut_type?: string | null

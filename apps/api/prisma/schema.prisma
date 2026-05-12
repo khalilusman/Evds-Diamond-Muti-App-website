@@ -147,21 +147,23 @@ model DiscFamily {
 // ─── 5. disc_catalog ──────────────────────────────────────────────────────────
 
 model DiscCatalog {
-  id               String @id @default(uuid())
+  id               String  @id @default(uuid())
   family_id        String
-  material_group   String @db.VarChar(100)
+  material_type    String  @db.VarChar(50)
   nominal_diameter Int
-  recommended_rpm  Int
+  rpm              Int
   diamond_height   Int
-  feed_2cm         Int
-  life_2cm         Int
-  feed_3cm         Int
-  life_3cm         Int
+  thickness_t1     Decimal @db.Decimal(4, 1)
+  feed_t1          Int
+  life_t1          Int
+  thickness_t2     Decimal @db.Decimal(4, 1)
+  feed_t2          Int
+  life_t2          Int
   miter_feed       Int
 
   family DiscFamily @relation(fields: [family_id], references: [id])
 
-  @@unique([family_id, material_group, nominal_diameter])
+  @@unique([family_id, material_type, nominal_diameter])
   @@map("disc_catalog")
 }
 
@@ -215,8 +217,8 @@ model DiscActivation {
   user_id               String
   machine_id            String
   diameter_at_activation Decimal         @db.Decimal(6, 1)
-  thickness_cm          Int
-  material_group        String?          @db.VarChar(100)
+  thickness              Decimal          @db.Decimal(4, 1)
+  material_type          String?          @db.VarChar(50)
   activation_window     Int              @default(1)
   activated_at          DateTime         @default(now())
   expires_at            DateTime
@@ -245,8 +247,8 @@ model UsageLog {
   meters_cut       Decimal  @db.Decimal(8, 2)
   rpm_used         Int?
   feed_used        Int?
-  material_group   String   @db.VarChar(100)
-  thickness_cm     Int
+  material_type    String?  @db.VarChar(100)
+  thickness        Decimal? @db.Decimal(4, 1)
   cut_type         String?  @db.VarChar(50)
   water_flow_ok    Boolean?
   notes            String?  @db.Text
@@ -294,9 +296,9 @@ model CostConfig {
   machine_cost_hour  Decimal  @db.Decimal(10, 2)
   labor_cost_hour    Decimal  @db.Decimal(10, 2)
   energy_cost_kwh    Decimal  @db.Decimal(10, 4)
-  default_disc_price Decimal  @db.Decimal(10, 2)
-  downtime_pct       Decimal  @default(10) @db.Decimal(5, 2)
-  waste_pct          Decimal  @default(5) @db.Decimal(5, 2)
+  default_disc_price Decimal? @db.Decimal(10, 2)
+  downtime_pct       Decimal  @db.Decimal(5, 2)  @default(10)
+  waste_pct          Decimal  @db.Decimal(5, 2)  @default(5)
   updated_at         DateTime @updatedAt
 
   company Company @relation(fields: [company_id], references: [id])

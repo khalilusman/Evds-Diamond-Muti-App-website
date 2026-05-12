@@ -4,10 +4,10 @@ import { prisma } from '../lib/prisma'
 // POST /api/usage-logs
 export async function createUsageLog(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { activation_id, current_diameter, meters_cut, rpm_used, feed_used, thickness_cm, cut_type, water_flow_ok, notes } = req.body
+    const { activation_id, current_diameter, meters_cut, rpm_used, feed_used, thickness, cut_type, water_flow_ok, notes } = req.body
 
-    if (!activation_id || current_diameter === undefined || !meters_cut || !thickness_cm) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'activation_id, current_diameter, meters_cut, thickness_cm are required' })
+    if (!activation_id || current_diameter === undefined || !meters_cut || !thickness) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'activation_id, current_diameter, meters_cut, thickness are required' })
       return
     }
 
@@ -53,15 +53,15 @@ export async function createUsageLog(req: Request, res: Response, next: NextFunc
     // machine_id: use body value if provided, else fall back to activation's machine
     const machineId = req.body.machine_id ?? activation.machine_id
 
-    // material_group: use body value if provided, else last log's value, else 'unknown'
-    let materialGroup = req.body.material_group ?? null
-    if (!materialGroup) {
+    // material_type: use body value if provided, else last log's value, else 'unknown'
+    let materialType = req.body.material_type ?? null
+    if (!materialType) {
       const lastLog = await prisma.usageLog.findFirst({
         where: { activation_id },
         orderBy: { logged_at: 'desc' },
-        select: { material_group: true },
+        select: { material_type: true },
       })
-      materialGroup = lastLog?.material_group ?? 'unknown'
+      materialType = lastLog?.material_type ?? 'unknown'
     }
 
     const log = await prisma.usageLog.create({
@@ -74,8 +74,8 @@ export async function createUsageLog(req: Request, res: Response, next: NextFunc
         meters_cut: metersCut,
         rpm_used: rpm_used ? Number(rpm_used) : null,
         feed_used: feed_used ? Number(feed_used) : null,
-        material_group: materialGroup,
-        thickness_cm: Number(thickness_cm),
+        material_type: materialType,
+        thickness: Number(thickness),
         cut_type: cut_type ?? null,
         water_flow_ok: water_flow_ok !== undefined ? Boolean(water_flow_ok) : null,
         notes: notes ?? null,
@@ -104,7 +104,7 @@ export async function getStats(req: Request, res: Response, next: NextFunction):
     const [aggregate, byMaterialRaw, byMachineRaw, active_discs] = await Promise.all([
       prisma.usageLog.aggregate({ where, _sum: { meters_cut: true }, _count: { id: true } }),
       prisma.usageLog.groupBy({
-        by: ['material_group'],
+        by: ['material_type'],
         where,
         _sum: { meters_cut: true },
         _count: { id: true },
@@ -125,7 +125,7 @@ export async function getStats(req: Request, res: Response, next: NextFunction):
     const total_sessions = aggregate._count.id
 
     const by_material = byMaterialRaw.map((g) => ({
-      material_group: g.material_group,
+      material_type: g.material_type,
       total_meters: Math.round(Number(g._sum.meters_cut ?? 0) * 100) / 100,
       sessions: g._count.id,
       avg_rpm: g._avg.rpm_used != null ? Math.round(Number(g._avg.rpm_used)) : null,
@@ -137,7 +137,7 @@ export async function getStats(req: Request, res: Response, next: NextFunction):
         const [machine, byMatRaw, lastLog] = await Promise.all([
           prisma.machine.findUnique({ where: { id: g.machine_id }, select: { name: true } }),
           prisma.usageLog.groupBy({
-            by: ['material_group'],
+            by: ['material_type'],
             where: { ...where, machine_id: g.machine_id },
             _sum: { meters_cut: true },
             _count: { id: true },
@@ -155,10 +155,10 @@ export async function getStats(req: Request, res: Response, next: NextFunction):
           machine_name: machine?.name ?? 'Unknown',
           total_meters: Math.round(Number(g._sum.meters_cut ?? 0) * 100) / 100,
           sessions: g._count.id,
-          most_used_material: byMatRaw[0]?.material_group ?? null,
+          most_used_material: byMatRaw[0]?.material_type ?? null,
           last_activity: lastLog?.logged_at?.toISOString() ?? null,
           by_material: byMatRaw.map((m) => ({
-            material_group: m.material_group,
+            material_type: m.material_type,
             meters: Math.round(Number(m._sum.meters_cut ?? 0) * 100) / 100,
             sessions: m._count.id,
             avg_rpm: m._avg.rpm_used != null ? Math.round(Number(m._avg.rpm_used)) : null,

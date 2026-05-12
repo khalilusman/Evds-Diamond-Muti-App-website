@@ -151,9 +151,9 @@ export default function AnalyticsPage() {
                 <div className="flex items-center gap-4">
                   <ResponsiveContainer width="60%" height={200}>
                     <PieChart>
-                      <Pie data={materials} dataKey="count" nameKey="material_group" cx="50%" cy="50%" innerRadius={50} outerRadius={80}>
+                      <Pie data={materials} dataKey="count" nameKey="material_type" cx="50%" cy="50%" innerRadius={50} outerRadius={80}>
                         {materials.map((entry, i) => (
-                          <Cell key={entry.material_group} fill={MATERIAL_COLORS[entry.material_group] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]} />
+                          <Cell key={entry.material_type} fill={MATERIAL_COLORS[entry.material_type] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(v: number, n: string) => [v, n]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
@@ -161,12 +161,12 @@ export default function AnalyticsPage() {
                   </ResponsiveContainer>
                   <div className="space-y-2 flex-1">
                     {materials.map((m, i) => (
-                      <div key={m.material_group} className="flex items-center gap-2 text-xs">
+                      <div key={m.material_type} className="flex items-center gap-2 text-xs">
                         <span
                           className="w-3 h-3 rounded-sm shrink-0"
-                          style={{ backgroundColor: MATERIAL_COLORS[m.material_group] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length] }}
+                          style={{ backgroundColor: MATERIAL_COLORS[m.material_type] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length] }}
                         />
-                        <span className="text-gray-700 dark:text-gray-300 capitalize">{m.material_group.replace('_', ' ')}</span>
+                        <span className="text-gray-700 dark:text-gray-300 capitalize">{m.material_type.replace('_', ' ')}</span>
                         <span className="ml-auto text-gray-500 dark:text-gray-400 font-medium">{m.percentage}%</span>
                       </div>
                     ))}

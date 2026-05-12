@@ -1,16 +1,17 @@
 interface CatalogParams {
-  recommended_rpm: number
-  feed_2cm: number
-  feed_3cm: number
-  life_2cm: number
-  life_3cm: number
+  rpm: number
+  thickness_t2: number
+  feed_t1: number
+  feed_t2: number
+  life_t1: number
+  life_t2: number
 }
 
 interface DiagnosisInput {
   symptom_code: string
   rpm_reported?: number | null
   feed_reported?: number | null
-  thickness_cm?: number | null
+  thickness?: number | null
   catalog: CatalogParams
 }
 
@@ -110,10 +111,11 @@ const DEFAULT_RESULT: Omit<DiagnosisResult, 'auto_diagnosis'> = {
 
 export function runDiagnosis(input: DiagnosisInput): DiagnosisResult {
   const { symptom_code, rpm_reported, feed_reported, catalog } = input
-  const thickness = input.thickness_cm === 3 ? 3 : 2
+  const thickness = input.thickness ?? 2.0
+  const useT2 = Math.abs(Number(catalog.thickness_t2) - thickness) < 0.01
 
-  const rpmFlag = rpm_reported ? classifyRpm(rpm_reported, catalog.recommended_rpm) : 'NONE'
-  const catalogFeed = thickness === 3 ? catalog.feed_3cm : catalog.feed_2cm
+  const rpmFlag = rpm_reported ? classifyRpm(rpm_reported, catalog.rpm) : 'NONE'
+  const catalogFeed = useT2 ? catalog.feed_t2 : catalog.feed_t1
   const feedFlag = feed_reported ? classifyFeed(feed_reported, catalogFeed) : 'NONE'
 
   const flags: string[] = []
@@ -121,7 +123,7 @@ export function runDiagnosis(input: DiagnosisInput): DiagnosisResult {
   if (feedFlag !== 'NONE') flags.push(feedFlag)
 
   const deviations: string[] = []
-  if (rpm_reported) deviations.push(`RPM reported: ${rpm_reported} (recommended: ${catalog.recommended_rpm}) → ${rpmFlag === 'NONE' ? 'OK' : rpmFlag}`)
+  if (rpm_reported) deviations.push(`RPM reported: ${rpm_reported} (recommended: ${catalog.rpm}) → ${rpmFlag === 'NONE' ? 'OK' : rpmFlag}`)
   if (feed_reported) deviations.push(`Feed reported: ${feed_reported} (catalog: ${catalogFeed}) → ${feedFlag === 'NONE' ? 'OK' : feedFlag}`)
 
   const autoDiagnosis = deviations.length > 0 ? deviations.join('. ') : 'No parameter deviation detected.'

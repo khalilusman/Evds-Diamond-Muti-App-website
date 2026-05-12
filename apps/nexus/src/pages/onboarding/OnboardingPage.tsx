@@ -10,15 +10,15 @@ import useAuthStore from '../../stores/auth.store'
 
 interface CostForm {
   machine_cost_hour: string
-  labor_cost_hour: string
-  energy_cost_kwh: string
+  labor_cost_hour:   string
+  energy_cost_kwh:   string
   default_disc_price: string
 }
 
 interface CostErrors {
   machine_cost_hour?: string
-  labor_cost_hour?: string
-  energy_cost_kwh?: string
+  labor_cost_hour?:   string
+  energy_cost_kwh?:   string
   default_disc_price?: string
 }
 
@@ -32,8 +32,8 @@ export default function OnboardingPage() {
 
   const [costForm, setCostForm] = useState<CostForm>({
     machine_cost_hour: '',
-    labor_cost_hour: '',
-    energy_cost_kwh: '',
+    labor_cost_hour:   '',
+    energy_cost_kwh:   '',
     default_disc_price: '',
   })
   const [costErrors, setCostErrors] = useState<CostErrors>({})
@@ -48,19 +48,19 @@ export default function OnboardingPage() {
 
   function validateCost() {
     const e: CostErrors = {}
-    const fields: (keyof CostForm)[] = [
-      'machine_cost_hour',
-      'labor_cost_hour',
-      'energy_cost_kwh',
-      'default_disc_price',
-    ]
-    for (const f of fields) {
-      const val = parseFloat(costForm[f])
-      if (!costForm[f]) {
-        e[f] = t('common.required')
-      } else if (isNaN(val) || val < 0) {
-        e[f] = 'Must be a positive number'
-      }
+    const machineVal = parseFloat(costForm.machine_cost_hour)
+    const laborVal   = parseFloat(costForm.labor_cost_hour)
+    const energyVal  = parseFloat(costForm.energy_cost_kwh)
+
+    if (!costForm.machine_cost_hour || isNaN(machineVal) || machineVal < 0)
+      e.machine_cost_hour = costForm.machine_cost_hour ? 'Must be a positive number' : t('common.required')
+    if (!costForm.labor_cost_hour || isNaN(laborVal) || laborVal < 0)
+      e.labor_cost_hour = costForm.labor_cost_hour ? 'Must be a positive number' : t('common.required')
+    if (!costForm.energy_cost_kwh || isNaN(energyVal) || energyVal < 0)
+      e.energy_cost_kwh = costForm.energy_cost_kwh ? 'Must be a positive number' : t('common.required')
+    if (costForm.default_disc_price) {
+      const discVal = parseFloat(costForm.default_disc_price)
+      if (isNaN(discVal) || discVal < 0) e.default_disc_price = 'Must be a positive number'
     }
     setCostErrors(e)
     return Object.keys(e).length === 0
@@ -80,9 +80,9 @@ export default function OnboardingPage() {
       await api.post('/api/machines', { name: machineName.trim() })
       await api.post('/api/cost/configs', {
         machine_cost_hour: parseFloat(costForm.machine_cost_hour),
-        labor_cost_hour: parseFloat(costForm.labor_cost_hour),
-        energy_cost_kwh: parseFloat(costForm.energy_cost_kwh),
-        default_disc_price: parseFloat(costForm.default_disc_price),
+        labor_cost_hour:   parseFloat(costForm.labor_cost_hour),
+        energy_cost_kwh:   parseFloat(costForm.energy_cost_kwh),
+        ...(costForm.default_disc_price ? { default_disc_price: parseFloat(costForm.default_disc_price) } : {}),
       })
       setStep(3)
     } catch (err: any) {
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
               </p>
               <div className="space-y-4">
                 <Input
-                  label={t('onboarding.machine_cost')}
+                  label="Machine Cost per Hour (€/h)"
                   type="number"
                   placeholder="0.00"
                   min="0"
@@ -199,7 +199,7 @@ export default function OnboardingPage() {
                   error={costErrors.machine_cost_hour}
                 />
                 <Input
-                  label={t('onboarding.labor_cost')}
+                  label="Labor Cost per Hour (€/h)"
                   type="number"
                   placeholder="0.00"
                   min="0"
@@ -209,7 +209,7 @@ export default function OnboardingPage() {
                   error={costErrors.labor_cost_hour}
                 />
                 <Input
-                  label={t('onboarding.energy_cost')}
+                  label="Energy Cost per kWh (€/kWh)"
                   type="number"
                   placeholder="0.0000"
                   min="0"
@@ -218,16 +218,21 @@ export default function OnboardingPage() {
                   onChange={(e) => setField('energy_cost_kwh', e.target.value)}
                   error={costErrors.energy_cost_kwh}
                 />
-                <Input
-                  label={t('onboarding.disc_price')}
-                  type="number"
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  value={costForm.default_disc_price}
-                  onChange={(e) => setField('default_disc_price', e.target.value)}
-                  error={costErrors.default_disc_price}
-                />
+                <div>
+                  <Input
+                    label={`${t('onboarding.disc_price')} (optional)`}
+                    type="number"
+                    placeholder="e.g. 450.00"
+                    min="0"
+                    step="0.01"
+                    value={costForm.default_disc_price}
+                    onChange={(e) => setField('default_disc_price', e.target.value)}
+                    error={costErrors.default_disc_price}
+                  />
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                    You can set or update this later from your profile settings.
+                  </p>
+                </div>
               </div>
               <div className="mt-6">
                 <Button fullWidth onClick={handleStep1Next}>
@@ -279,7 +284,7 @@ export default function OnboardingPage() {
                 {t('onboarding.complete_message')}
               </p>
               <Button fullWidth loading={loading} onClick={handleComplete}>
-                Start Using EVDS Diamond
+                Start Using EVDS Nexus
               </Button>
             </div>
           )}

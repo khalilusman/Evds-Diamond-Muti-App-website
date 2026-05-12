@@ -3,29 +3,33 @@ import api from './client'
 export interface CostConfig {
   id: string
   company_id: string
-  machine_cost_hour: number
-  labor_cost_hour: number
-  energy_cost_kwh: number
-  default_disc_price: number
-  downtime_pct: number
-  waste_pct: number
+  machine_cost_hour:  number
+  labor_cost_hour:    number
+  energy_cost_kwh:    number
+  default_disc_price: number | null
+  downtime_pct:       number
+  waste_pct:          number
 }
 
 export interface CostResult {
-  cutting_time_min: number
-  machine_cost: number
-  labor_cost: number
-  disc_wear_cost: number
-  energy_cost: number
-  material_cost: number
-  subtotal: number
-  total: number
-  cost_per_meter: number
-  cost_per_piece: number
-  total_linear_meters: number
-  copies: number
-  piece_count: number
-  total_perimeter: number
+  disc_fraction:     number
+  disc_cost:         number
+  time_minutes:      number
+  machine_cost:      number
+  labor_cost:        number
+  energy_cost:       number
+  material_cost:     number
+  total:             number
+  cost_per_lm:       number
+  feed_used:         number
+  life_used:         number
+  metres_to_cut:     number
+  disc_price:        number
+  machine_cost_hour: number
+  labor_cost_hour:   number
+  energy_cost_kwh:   number
+  downtime_pct:      number
+  waste_pct:         number
 }
 
 export interface CostCalculation {
@@ -40,20 +44,21 @@ export interface CostCalculation {
 }
 
 export interface CalculatePayload {
-  activation_id?: string
-  input_method: 'DXF' | 'MANUAL'
-  piece_count?: number        // DXF only
-  total_perimeter?: number    // DXF only (mm)
-  total_linear_meters?: number // MANUAL only (m)
-  material_price: number
-  disc_price?: number
-  copies: number
-  thickness_cm: 2 | 3
-  machine_cost_hour?: number
-  labor_cost_hour?: number
-  energy_cost_kwh?: number
-  downtime_pct?: number
-  waste_pct?: number
+  activation_id?:       string
+  input_method:         'DXF' | 'MANUAL'
+  piece_count?:         number
+  total_perimeter?:     number
+  total_linear_meters?: number
+  disc_price?:          number
+  thickness?:           number
+  material_type?:       string
+  machine_cost_hour?:   number
+  labor_cost_hour?:     number
+  energy_cost_kwh?:     number
+  downtime_pct?:        number
+  waste_pct?:           number
+  material_price_m2?:   number
+  estimated_area?:      number
 }
 
 export const getCostConfig = async (): Promise<CostConfig | null> => {

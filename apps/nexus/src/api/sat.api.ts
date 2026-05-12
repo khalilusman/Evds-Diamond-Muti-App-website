@@ -22,7 +22,7 @@ export interface SatTicket {
   activation?: {
     id: string
     diameter_at_activation: number
-    thickness_cm: number
+    thickness: number
     label: {
       unique_code: string
       nominal_diameter: number
@@ -30,11 +30,11 @@ export interface SatTicket {
     }
   }
   catalog_params?: {
-    recommended_rpm: number
-    feed_2cm: number
-    life_2cm: number
-    feed_3cm: number
-    life_3cm: number
+    rpm: number
+    feed_t1: number
+    life_t1: number
+    feed_t2: number
+    life_t2: number
   } | null
 }
 

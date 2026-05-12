@@ -13,10 +13,10 @@ export const FAMILY_ABBREVIATIONS: Record<string, string> = {
 
 // Maps family name → allowed material_groups
 export const FAMILY_VALID_MATERIALS: Record<string, string[]> = {
-  'THE QUEEN': ['quartzite'],
-  'THE KING': ['porcelain', 'quartzite'],
-  HERCULES: ['porcelain'],
-  'V-ARRAY': ['granite', 'compact_quartz'],
+  'THE QUEEN': ['quartzite_es'],
+  'THE KING':  ['porcelain', 'quartzite'],
+  HERCULES:    ['porcelain'],
+  'V-ARRAY':   ['granite', 'compact_quartz'],
 }
 
 function randomCode(): string {

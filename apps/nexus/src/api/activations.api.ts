@@ -18,8 +18,8 @@ export interface Activation {
   id: string
   status: string
   diameter_at_activation: number
-  thickness_cm: number
-  material_group?: string | null
+  thickness: number
+  material_type?: string | null
   activation_window: number
   notes?: string | null
   expires_at: string
@@ -45,8 +45,8 @@ export interface CreateActivationData {
   unique_code: string
   machine_id: string
   diameter_at_activation: number
-  thickness_cm: number
-  material_group: string
+  thickness: number
+  material_type: string
   notes?: string
 }
 

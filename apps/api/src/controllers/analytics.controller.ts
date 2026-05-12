@@ -114,15 +114,15 @@ export async function weekly(req: Request, res: Response, next: NextFunction): P
 export async function materials(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const groups = await prisma.usageLog.groupBy({
-      by: ['material_group'],
-      _count: { material_group: true },
-      orderBy: { _count: { material_group: 'desc' } },
+      by: ['material_type'],
+      _count: { material_type: true },
+      orderBy: { _count: { material_type: 'desc' } },
     })
-    const total = groups.reduce((s, g) => s + g._count.material_group, 0)
+    const total = groups.reduce((s, g) => s + g._count.material_type, 0)
     const data = groups.map((g) => ({
-      material_group: g.material_group,
-      count: g._count.material_group,
-      percentage: total > 0 ? Math.round((g._count.material_group / total) * 100) : 0,
+      material_type: g.material_type,
+      count: g._count.material_type,
+      percentage: total > 0 ? Math.round((g._count.material_type / total) * 100) : 0,
     }))
     res.json({ data })
   } catch (err) {
@@ -223,10 +223,10 @@ export async function performance(_req: Request, res: Response, next: NextFuncti
     for (const t of ticketsWithRpm) {
       const catalog = await prisma.discCatalog.findFirst({
         where: { family_id: t.activation.label.family_id, nominal_diameter: t.activation.label.nominal_diameter },
-        select: { recommended_rpm: true },
+        select: { rpm: true },
       })
       if (catalog && t.rpm_reported) {
-        totalRpmDeviation += Math.abs((Number(t.rpm_reported) - catalog.recommended_rpm) / catalog.recommended_rpm) * 100
+        totalRpmDeviation += Math.abs((Number(t.rpm_reported) - catalog.rpm) / catalog.rpm) * 100
         rpmCount++
       }
     }

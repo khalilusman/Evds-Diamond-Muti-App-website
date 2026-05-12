@@ -15,32 +15,62 @@ import { getCatalog, DiscCatalog } from '../../api/catalog.api'
 
 type InputMethod = 'DXF' | 'MANUAL'
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const FAMILY_MATERIALS: Record<string, string[]> = {
+  'THE QUEEN': ['quartzite_es'],
+  'THE KING':  ['porcelain', 'quartzite'],
+  'HERCULES':  ['porcelain'],
+  'V-ARRAY':   ['granite', 'compact_quartz'],
+}
+
+const MATERIAL_LABELS: Record<string, string> = {
+  quartzite_es:   'Quartzite (Cuarcita)',
+  porcelain:      'Porcelain / Dekton',
+  quartzite:      'Quartzite (Intl.)',
+  granite:        'Granite',
+  compact_quartz: 'Compact Quartz',
+}
+
+const MATERIAL_THICKNESS: Record<string, number[]> = {
+  porcelain: [2.0, 1.2],
+}
+const DEFAULT_THICKNESS = [2.0, 3.0]
+
+function getThicknesses(material: string): number[] {
+  return MATERIAL_THICKNESS[material] ?? DEFAULT_THICKNESS
+}
+
+// ─── FormState ────────────────────────────────────────────────────────────────
+
 interface FormState {
-  activation_id: string
-  linear_meters: string
-  material_price: string
-  disc_price: string
-  copies: string
-  thickness_cm: 2 | 3
+  activation_id:     string
+  material_type:     string
+  thickness:         string
+  linear_meters:     string
+  disc_price:        string
+  material_price_m2: string
+  estimated_area:    string
   machine_cost_hour: string
-  labor_cost_hour: string
-  energy_cost_kwh: string
-  downtime_pct: string
-  waste_pct: string
+  labor_cost_hour:   string
+  energy_cost_kwh:   string
+  downtime_pct:      string
+  waste_pct:         string
 }
 
 const defaultForm = (): FormState => ({
-  activation_id: '',
-  linear_meters: '',
-  material_price: '',
-  disc_price: '',
-  copies: '1',
-  thickness_cm: 2,
+  activation_id:     '',
+  material_type:     '',
+  thickness:         '2.0',
+  linear_meters:     '',
+  disc_price:        '',
+  material_price_m2: '',
+  estimated_area:    '',
   machine_cost_hour: '',
-  labor_cost_hour: '',
-  energy_cost_kwh: '',
-  downtime_pct: '',
-  waste_pct: '',
+  labor_cost_hour:   '',
+  energy_cost_kwh:   '',
+  downtime_pct:      '',
+  waste_pct:         '',
 })
 
 // ─── DXF Upload Zone ──────────────────────────────────────────────────────────
@@ -196,10 +226,9 @@ export default function CostPage() {
   const [form, setForm] = useState<FormState>(defaultForm())
   const [dxfResult, setDxfResult] = useState<DxfParseResult | null>(null)
   const [result, setResult] = useState<CostResult | null>(null)
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
-  // Queries
   const { data: costConfig } = useQuery({
     queryKey: ['cost-config'],
     queryFn: getCostConfig,
@@ -215,79 +244,106 @@ export default function CostPage() {
     queryFn: getCalculations,
   })
 
+  // Auto-select first activation on load
   useEffect(() => {
     if (activations.length > 0 && !form.activation_id) {
-      setForm((f) => ({ ...f, activation_id: activations[0].id }))
+      const first = activations[0]
+      const fName = first.label?.family?.name ?? ''
+      const available = FAMILY_MATERIALS[fName] ?? []
+      const defaultMat = available.includes(first.material_type ?? '')
+        ? first.material_type!
+        : available[0] ?? ''
+      const thicknesses = getThicknesses(defaultMat)
+      setForm((f) => ({
+        ...f,
+        activation_id: first.id,
+        material_type:  defaultMat,
+        thickness:      String(thicknesses[0]),
+      }))
     }
   }, [activations])
 
+  // Pre-fill economic params from config
   useEffect(() => {
     if (costConfig) {
       setForm((f) => ({
         ...f,
-        machine_cost_hour: String(costConfig.machine_cost_hour),
-        labor_cost_hour:   String(costConfig.labor_cost_hour),
-        energy_cost_kwh:   String(costConfig.energy_cost_kwh),
-        downtime_pct:      String(costConfig.downtime_pct),
-        waste_pct:         String(costConfig.waste_pct),
+        disc_price:        f.disc_price        || String(costConfig.default_disc_price ?? ''),
+        machine_cost_hour: f.machine_cost_hour || String(costConfig.machine_cost_hour),
+        labor_cost_hour:   f.labor_cost_hour   || String(costConfig.labor_cost_hour),
+        energy_cost_kwh:   f.energy_cost_kwh   || String(costConfig.energy_cost_kwh),
+        downtime_pct:      f.downtime_pct      || String(costConfig.downtime_pct),
+        waste_pct:         f.waste_pct         || String(costConfig.waste_pct),
       }))
     }
   }, [costConfig])
 
-  // Auto-fill disc price from config when config loads
-  const discPriceDefault = costConfig?.default_disc_price?.toString() ?? ''
+  const selectedActivation = activations.find((a) => a.id === form.activation_id) ?? null
+  const familyName = selectedActivation?.label?.family?.name ?? ''
+  const availableMaterials = FAMILY_MATERIALS[familyName] ?? []
+  const thicknessOptions = getThicknesses(form.material_type)
 
-  function field(key: keyof FormState) {
-    return {
-      value: form[key] as string,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm((f) => ({ ...f, [key]: e.target.value }))
-        setErrors((er) => ({ ...er, [key]: undefined }))
-      },
-      error: errors[key],
-    }
+  function handleActivationChange(id: string) {
+    const a = activations.find((x) => x.id === id)
+    const fName = a?.label?.family?.name ?? ''
+    const available = FAMILY_MATERIALS[fName] ?? []
+    const defaultMat = available.includes(a?.material_type ?? '')
+      ? a!.material_type!
+      : available[0] ?? ''
+    const thicknesses = getThicknesses(defaultMat)
+    setForm((f) => ({
+      ...f,
+      activation_id: id,
+      material_type:  defaultMat,
+      thickness:      String(thicknesses[0]),
+    }))
   }
 
-  // Selected disc label for result card
-  const selectedActivation = activations.find((a) => a.id === form.activation_id)
-  const discLabel = selectedActivation
-    ? `${selectedActivation.label?.family?.name} ${selectedActivation.label?.nominal_diameter}mm`
-    : undefined
+  function handleMaterialChange(mat: string) {
+    const thicknesses = getThicknesses(mat)
+    setForm((f) => ({
+      ...f,
+      material_type: mat,
+      thickness:     String(thicknesses[0]),
+    }))
+  }
 
+  // Catalog query
   const { data: catalogList = [] } = useQuery({
     queryKey: [
       'catalog',
       selectedActivation?.label?.family?.id,
-      selectedActivation?.material_group,
+      form.material_type,
       selectedActivation?.label?.nominal_diameter,
     ],
     queryFn: () =>
       getCatalog({
-        family_id: selectedActivation!.label.family.id,
-        material_group: selectedActivation!.material_group ?? undefined,
+        family_id:        selectedActivation!.label.family.id,
+        material_type:    form.material_type,
         nominal_diameter: selectedActivation!.label.nominal_diameter,
       }),
-    enabled: !!selectedActivation && !!selectedActivation.material_group,
+    enabled: !!selectedActivation && !!form.material_type,
   })
   const catalog: DiscCatalog | null = catalogList[0] ?? null
 
-  function handleDxfResult(r: DxfParseResult) {
-    setDxfResult(r)
-  }
+  const thickness = Number(form.thickness)
+  const useT2      = catalog ? Math.abs(Number(catalog.thickness_t2) - thickness) < 0.01 : false
+  const previewFeed = catalog ? (useT2 ? catalog.feed_t2 : catalog.feed_t1) : null
+  const previewLife = catalog ? (useT2 ? catalog.life_t2 : catalog.life_t1) : null
+
+  const discLabel = selectedActivation
+    ? `${selectedActivation.label?.family?.name} ${selectedActivation.label?.nominal_diameter}mm`
+    : undefined
 
   function validate(): boolean {
     const e: typeof errors = {}
-    const mPrice = Number(form.material_price)
-    const copies = Number(form.copies)
-
     if (inputMethod === 'DXF') {
       if (!dxfResult || dxfResult.pieceCount === 0) e.linear_meters = 'Upload a valid DXF file first'
     } else {
       const lm = Number(form.linear_meters)
       if (!form.linear_meters || lm <= 0) e.linear_meters = 'Must be a positive number'
     }
-    if (!form.material_price || mPrice < 0) e.material_price = 'Required'
-    if (!form.copies || copies <= 0) e.copies = 'Must be at least 1'
+    if (!form.material_type) e.material_type = 'Select a material'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -296,28 +352,29 @@ export default function CostPage() {
     mutationFn: () => {
       if (!costConfig) throw new Error('NO_COST_CONFIG')
       const common = {
-        activation_id: form.activation_id || undefined,
-        material_price: Number(form.material_price),
-        disc_price: form.disc_price ? Number(form.disc_price) : undefined,
-        copies: Number(form.copies),
-        thickness_cm: form.thickness_cm,
+        activation_id:     form.activation_id || undefined,
+        material_type:     form.material_type  || undefined,
+        thickness:         Number(form.thickness),
+        disc_price:        form.disc_price        ? Number(form.disc_price)        : undefined,
         machine_cost_hour: form.machine_cost_hour ? Number(form.machine_cost_hour) : undefined,
         labor_cost_hour:   form.labor_cost_hour   ? Number(form.labor_cost_hour)   : undefined,
         energy_cost_kwh:   form.energy_cost_kwh   ? Number(form.energy_cost_kwh)   : undefined,
-        downtime_pct:      form.downtime_pct      ? Number(form.downtime_pct)      : undefined,
-        waste_pct:         form.waste_pct         ? Number(form.waste_pct)         : undefined,
+        downtime_pct:      form.downtime_pct       ? Number(form.downtime_pct)      : undefined,
+        waste_pct:         form.waste_pct          ? Number(form.waste_pct)         : undefined,
+        material_price_m2: form.material_price_m2  ? Number(form.material_price_m2) : undefined,
+        estimated_area:    form.estimated_area      ? Number(form.estimated_area)    : undefined,
       }
       if (inputMethod === 'DXF') {
         return calculateCost({
           ...common,
-          input_method: 'DXF',
-          piece_count: dxfResult!.pieceCount,
+          input_method:    'DXF',
+          piece_count:     dxfResult!.pieceCount,
           total_perimeter: dxfResult!.totalPerimeter,
         })
       } else {
         return calculateCost({
           ...common,
-          input_method: 'MANUAL',
+          input_method:        'MANUAL',
           total_linear_meters: Number(form.linear_meters),
         })
       }
@@ -348,16 +405,16 @@ export default function CostPage() {
 
   function handleReset() {
     setResult(null)
-    setForm({
-      ...defaultForm(),
-      ...(costConfig ? {
-        machine_cost_hour: String(costConfig.machine_cost_hour),
-        labor_cost_hour:   String(costConfig.labor_cost_hour),
-        energy_cost_kwh:   String(costConfig.energy_cost_kwh),
-        downtime_pct:      String(costConfig.downtime_pct),
-        waste_pct:         String(costConfig.waste_pct),
-      } : {}),
-    })
+    const base = defaultForm()
+    if (costConfig) {
+      base.disc_price        = String(costConfig.default_disc_price ?? '')
+      base.machine_cost_hour = String(costConfig.machine_cost_hour)
+      base.labor_cost_hour   = String(costConfig.labor_cost_hour)
+      base.energy_cost_kwh   = String(costConfig.energy_cost_kwh)
+      base.downtime_pct      = String(costConfig.downtime_pct)
+      base.waste_pct         = String(costConfig.waste_pct)
+    }
+    setForm(base)
     setDxfResult(null)
     setErrors({})
   }
@@ -384,12 +441,9 @@ export default function CostPage() {
         <div className="flex flex-col items-center justify-center mt-16 text-center px-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 max-w-md w-full space-y-4">
             <div className="text-6xl">🧮</div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              No Active Disc
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">No Active Disc</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              The cost calculator requires an active disc. Activate a disc first
-              to use the cost calculator with the correct disc parameters.
+              The cost calculator requires an active disc. Activate a disc first to use the cost calculator.
             </p>
             <Link to="/activate">
               <Button fullWidth>Activate a Disc</Button>
@@ -405,14 +459,7 @@ export default function CostPage() {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto">
-          <CostResultCard
-            result={result}
-            discLabel={discLabel}
-            materialGroup={selectedActivation?.material_group ?? undefined}
-            thickness={form.thickness_cm}
-            inputMethod={inputMethod}
-            onReset={handleReset}
-          />
+          <CostResultCard result={result} discLabel={discLabel} onReset={handleReset} />
         </div>
       </AppLayout>
     )
@@ -436,7 +483,7 @@ export default function CostPage() {
             <select
               title="Active Disc"
               value={form.activation_id}
-              onChange={(e) => setForm((f) => ({ ...f, activation_id: e.target.value }))}
+              onChange={(e) => handleActivationChange(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             >
               <option value="">— No disc selected —</option>
@@ -446,22 +493,91 @@ export default function CostPage() {
                 </option>
               ))}
             </select>
-            {selectedActivation?.material_group && (
-              <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                  Material:
-                </span>
-                <span className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                  {selectedActivation.material_group}
-                </span>
-                <span className="text-xs text-blue-400 dark:text-blue-500 ml-auto italic">
-                  from disc
-                </span>
-              </div>
-            )}
           </div>
 
-          {/* 2 — Input method toggle */}
+          {/* 2 — Material selector */}
+          {selectedActivation && availableMaterials.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Material
+              </label>
+              {availableMaterials.length === 1 ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    {MATERIAL_LABELS[availableMaterials[0]] ?? availableMaterials[0]}
+                  </span>
+                  <span className="text-xs text-blue-400 dark:text-blue-500">auto-selected</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {availableMaterials.map((mat) => (
+                    <button
+                      key={mat}
+                      type="button"
+                      onClick={() => handleMaterialChange(mat)}
+                      className={[
+                        'px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                        form.material_type === mat
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
+                      ].join(' ')}
+                    >
+                      {MATERIAL_LABELS[mat] ?? mat}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {errors.material_type && (
+                <p className="mt-1 text-xs text-red-500">{errors.material_type}</p>
+              )}
+            </div>
+          )}
+
+          {/* 3 — Thickness selector */}
+          {form.material_type && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Thickness
+              </label>
+              <div className="flex gap-2">
+                {thicknessOptions.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, thickness: String(t) }))}
+                    className={[
+                      'px-5 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                      Number(form.thickness) === t
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
+                    ].join(' ')}
+                  >
+                    {t} cm
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 4 — Catalog params preview */}
+          {catalog && (
+            <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              <div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">RPM</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{catalog.rpm}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Feed rate</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{previewFeed} mm/min</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Disc life</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{previewLife} m</p>
+              </div>
+            </div>
+          )}
+
+          {/* 5 — Input method toggle */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('cost.input_method')}
@@ -488,10 +604,10 @@ export default function CostPage() {
             </div>
           </div>
 
-          {/* 3 — DXF or Manual inputs */}
+          {/* 6 — DXF or Manual inputs */}
           {inputMethod === 'DXF' ? (
             <div className="space-y-3">
-              <DxfUploadZone onResult={handleDxfResult} onError={() => setInputMethod('MANUAL')} />
+              <DxfUploadZone onResult={(r) => setDxfResult(r)} onError={() => setInputMethod('MANUAL')} />
               {dxfResult && <DxfResultBox result={dxfResult} />}
               {errors.linear_meters && (
                 <p className="text-xs text-red-500">{errors.linear_meters}</p>
@@ -505,127 +621,106 @@ export default function CostPage() {
                 min="0"
                 step="0.001"
                 placeholder="e.g. 22.000"
-                {...field('linear_meters')}
+                value={form.linear_meters}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, linear_meters: e.target.value }))
+                  setErrors((er) => ({ ...er, linear_meters: undefined }))
+                }}
+                error={errors.linear_meters}
               />
-              <p className="text-xs text-gray-400 dark:text-gray-500">
-                Enter total linear meters to cut
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
-                Example: 22.000 linear meters of granite cut with V-ARRAY 450mm
-              </p>
             </div>
           )}
 
-          {/* 4 — Thickness */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('cost.thickness')}
-            </label>
-            <div className="flex gap-3">
-              {([2, 3] as const).map((cm) => (
-                <button
-                  key={cm}
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, thickness_cm: cm }))}
-                  className={[
-                    'flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all',
-                    form.thickness_cm === cm
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
-                  ].join(' ')}
-                >
-                  {cm} cm
-                </button>
-              ))}
-            </div>
-            {catalog && (
-              <div className="grid grid-cols-2 gap-3 mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Recommended feed</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {form.thickness_cm === 2 ? catalog.feed_2cm : catalog.feed_3cm} mm/min
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Expected life</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {form.thickness_cm === 2 ? catalog.life_2cm : catalog.life_3cm} m
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 5 — Economic parameters */}
+          {/* 7 — Disc price + Material price */}
           <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Economic Parameters
-            </p>
             <div className="grid grid-cols-2 gap-3">
               <Input
-                label={`${t('cost.material_price')} (€/m²)`}
+                label="Disc Price (€)"
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="45.00"
-                {...field('material_price')}
-              />
-              <Input
-                label={`${t('cost.disc_price')} (€)`}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder={discPriceDefault || '450.00'}
-                value={form.disc_price || discPriceDefault}
+                placeholder="450.00"
+                value={form.disc_price}
                 onChange={(e) => setForm((f) => ({ ...f, disc_price: e.target.value }))}
-                error={errors.disc_price}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <Input
-                label={t('cost.copies')}
+                label="Material Price (€/m²)"
                 type="number"
-                min="1"
-                placeholder="1"
-                {...field('copies')}
+                min="0"
+                step="0.01"
+                placeholder="0.00 (optional)"
+                value={form.material_price_m2}
+                onChange={(e) => setForm((f) => ({ ...f, material_price_m2: e.target.value }))}
               />
             </div>
+            <Input
+              label="Estimated Area (m²)"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 25.00 (optional)"
+              value={form.estimated_area}
+              onChange={(e) => setForm((f) => ({ ...f, estimated_area: e.target.value }))}
+            />
+          </div>
 
-            {/* Advanced collapsible */}
-            {costConfig && (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setShowAdvanced((v) => !v)}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {showAdvanced ? '▲ Hide' : '▼ Show'} advanced settings
-                </button>
-                {showAdvanced && (
-                  <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input label="Machine Cost (€/h)"  type="number" min="0" step="0.01"  {...field('machine_cost_hour')} />
-                      <Input label="Labor Cost (€/h)"    type="number" min="0" step="0.01"  {...field('labor_cost_hour')} />
-                      <Input label="Energy Cost (€/kWh)" type="number" min="0" step="0.001" {...field('energy_cost_kwh')} />
-                      <Input label="Downtime %"          type="number" min="0" max="100"    {...field('downtime_pct')} />
-                      <Input label="Waste %"             type="number" min="0" max="100"    {...field('waste_pct')} />
-                    </div>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-600">
-                      These values are pre-filled from your profile settings. Changes here only affect this calculation.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!costConfig && (
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-                ⚠️ No cost configuration found. Please set up your cost parameters in the Profile page before calculating.
+          {/* 8 — Advanced settings (collapsible) */}
+          <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              <span>Advanced Settings</span>
+              <span className="text-gray-400 text-xs">{showAdvanced ? '▲' : '▼'}</span>
+            </button>
+            {showAdvanced && (
+              <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                  Pre-filled from your profile. Changes here only affect this calculation.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Machine Cost (€/h)"
+                    type="number" min="0" step="0.01"
+                    value={form.machine_cost_hour}
+                    onChange={(e) => setForm((f) => ({ ...f, machine_cost_hour: e.target.value }))}
+                  />
+                  <Input
+                    label="Labor Cost (€/h)"
+                    type="number" min="0" step="0.01"
+                    value={form.labor_cost_hour}
+                    onChange={(e) => setForm((f) => ({ ...f, labor_cost_hour: e.target.value }))}
+                  />
+                  <Input
+                    label="Energy Cost (€/kWh)"
+                    type="number" min="0" step="0.0001"
+                    value={form.energy_cost_kwh}
+                    onChange={(e) => setForm((f) => ({ ...f, energy_cost_kwh: e.target.value }))}
+                  />
+                  <Input
+                    label="Downtime (%)"
+                    type="number" min="0" max="100" step="0.1"
+                    value={form.downtime_pct}
+                    onChange={(e) => setForm((f) => ({ ...f, downtime_pct: e.target.value }))}
+                  />
+                  <Input
+                    label="Waste (%)"
+                    type="number" min="0" max="100" step="0.1"
+                    value={form.waste_pct}
+                    onChange={(e) => setForm((f) => ({ ...f, waste_pct: e.target.value }))}
+                  />
+                </div>
               </div>
             )}
           </div>
 
-          {/* Calculate button */}
+          {!costConfig && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+              ⚠️ No cost configuration found. Please set up your cost parameters in the Profile page before calculating.
+            </div>
+          )}
+
           <Button
             fullWidth
             loading={calcMut.isPending}

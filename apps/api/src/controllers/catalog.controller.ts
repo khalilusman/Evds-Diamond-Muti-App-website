@@ -1,22 +1,36 @@
 import { Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
 
-const MATERIALS: Record<string, { label: string; subtypes: string[] }> = {
-  granite: {
-    label: 'Granite',
-    subtypes: ['Brazilian Black', 'Indian Black', 'African Red', 'White Granite', 'Other Granite'],
-  },
-  compact_quartz: {
-    label: 'Compact Quartz / Engineered Quartz',
-    subtypes: ['Silestone', 'Caesarstone', 'Compac', 'Dekton Quartz', 'Other Compact Quartz'],
+const MATERIALS = {
+  quartzite_es: {
+    label: 'Quartzite (Cuarcita)',
+    subtypes: ['Cuarcita española', 'Other'],
+    compatible_families: ['THE QUEEN'],
+    thickness_options: [2.0, 3.0],
   },
   porcelain: {
     label: 'Porcelain / Dekton',
-    subtypes: ['Standard Porcelain', 'Large Format Porcelain', 'Dekton', 'Neolith', 'Other Porcelain'],
+    subtypes: ['Standard Porcelain', 'Large Format', 'Dekton', 'Neolith', 'Other'],
+    compatible_families: ['THE KING', 'HERCULES'],
+    thickness_options: [2.0, 1.2],
   },
   quartzite: {
-    label: 'Quartzite / Cuarcita',
-    subtypes: ['White Quartzite', 'Taj Mahal', 'Sea Pearl', 'Calacatta Quartzite', 'Other Quartzite'],
+    label: 'Quartzite (International)',
+    subtypes: ['White Quartzite', 'Taj Mahal', 'Sea Pearl', 'Other'],
+    compatible_families: ['THE KING'],
+    thickness_options: [2.0, 3.0],
+  },
+  granite: {
+    label: 'Granite',
+    subtypes: ['Brazilian Black', 'Indian Black', 'African Red', 'White', 'Other'],
+    compatible_families: ['V-ARRAY'],
+    thickness_options: [2.0, 3.0],
+  },
+  compact_quartz: {
+    label: 'Compact Quartz',
+    subtypes: ['Silestone', 'Caesarstone', 'Compac', 'Other'],
+    compatible_families: ['V-ARRAY'],
+    thickness_options: [2.0, 3.0],
   },
 }
 
@@ -35,13 +49,13 @@ export async function getCatalog(req: Request, res: Response, next: NextFunction
   try {
     const where: Record<string, unknown> = {}
     if (req.query.family_id) where.family_id = req.query.family_id
-    if (req.query.material_group) where.material_group = req.query.material_group
+    if (req.query.material_type) where.material_type = req.query.material_type
     if (req.query.nominal_diameter) where.nominal_diameter = Number(req.query.nominal_diameter)
 
     const entries = await prisma.discCatalog.findMany({
       where,
       include: { family: true },
-      orderBy: [{ family: { name: 'asc' } }, { material_group: 'asc' }, { nominal_diameter: 'asc' }],
+      orderBy: [{ family: { name: 'asc' } }, { material_type: 'asc' }, { nominal_diameter: 'asc' }],
     })
     res.json({ data: entries })
   } catch (err) {

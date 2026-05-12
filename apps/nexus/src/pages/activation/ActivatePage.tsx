@@ -11,12 +11,12 @@ import { lookupCode, createActivation, LabelLookup, Activation } from '../../api
 import { getMachines } from '../../api/machines.api'
 import { getCatalog, getWearReference } from '../../api/catalog.api'
 
-// Family → valid material groups
+// Family → valid material types
 const FAMILY_MATERIALS: Record<string, { value: string; label: string }[]> = {
-  'THE QUEEN': [{ value: 'quartzite', label: 'Quartzite' }],
+  'THE QUEEN': [{ value: 'quartzite_es', label: 'Quartzite (Cuarcita)' }],
   'THE KING': [
     { value: 'porcelain', label: 'Porcelain / Dekton' },
-    { value: 'quartzite', label: 'Quartzite' },
+    { value: 'quartzite', label: 'Quartzite (International)' },
   ],
   HERCULES: [{ value: 'porcelain', label: 'Porcelain / Dekton' }],
   'V-ARRAY': [
@@ -25,12 +25,21 @@ const FAMILY_MATERIALS: Record<string, { value: string; label: string }[]> = {
   ],
 }
 
+// Material → valid thickness options (cm)
+const MATERIAL_THICKNESS: Record<string, number[]> = {
+  quartzite_es:   [2.0, 3.0],
+  porcelain:      [2.0, 1.2],
+  quartzite:      [2.0, 3.0],
+  granite:        [2.0, 3.0],
+  compact_quartz: [2.0, 3.0],
+}
+
 interface FormData {
   unique_code: string
   machine_id: string
   diameter_at_activation: string
-  thickness_cm: 2 | 3
-  material_group: string
+  thickness: number
+  material_type: string
   notes: string
 }
 
@@ -239,14 +248,14 @@ function Step2({
   })
 
   const { data: catalogList = [] } = useQuery({
-    queryKey: ['catalog', label.family.id, formData.material_group, label.nominal_diameter],
+    queryKey: ['catalog', label.family.id, formData.material_type, label.nominal_diameter],
     queryFn: () =>
       getCatalog({
         family_id: label.family.id,
-        material_group: formData.material_group || undefined,
+        material_type: formData.material_type || undefined,
         nominal_diameter: label.nominal_diameter,
       }),
-    enabled: !!formData.material_group,
+    enabled: !!formData.material_type,
   })
 
   const { data: wearList = [] } = useQuery({
@@ -257,24 +266,25 @@ function Step2({
 
   const catalog = catalogList[0]
   const wear = wearList[0]
-  const recommendedFeed = catalog
-    ? (formData.thickness_cm === 3 ? catalog.feed_3cm : catalog.feed_2cm)
-    : null
-  const expectedLife = catalog
-    ? (formData.thickness_cm === 3 ? catalog.life_3cm : catalog.life_2cm)
-    : null
 
-  // Auto-select if only one material
+  function pickT2(t: number) {
+    return catalog ? Math.abs(Number(catalog.thickness_t2) - t) < 0.01 : false
+  }
+  const recommendedFeed = catalog ? (pickT2(formData.thickness) ? catalog.feed_t2 : catalog.feed_t1) : null
+  const expectedLife    = catalog ? (pickT2(formData.thickness) ? catalog.life_t2 : catalog.life_t1) : null
+
+  // Auto-select if only one material option
   useEffect(() => {
-    if (materialOptions.length === 1 && !formData.material_group) {
-      setFormData({ ...formData, material_group: materialOptions[0].value })
+    if (materialOptions.length === 1 && !formData.material_type) {
+      const first = MATERIAL_THICKNESS[materialOptions[0].value]?.[0] ?? 2.0
+      setFormData({ ...formData, material_type: materialOptions[0].value, thickness: first })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function validate() {
     const e: Record<string, string> = {}
-    if (!formData.material_group) e.material = 'Please select a material'
+    if (!formData.material_type) e.material = 'Please select a material'
     if (!formData.machine_id) e.machine = 'Please select a machine'
     if (!formData.diameter_at_activation) {
       e.diameter = t('common.required')
@@ -319,12 +329,13 @@ function Step2({
                 key={opt.value}
                 type="button"
                 onClick={() => {
-                  setFormData({ ...formData, material_group: opt.value })
+                  const first = MATERIAL_THICKNESS[opt.value]?.[0] ?? 2.0
+                  setFormData({ ...formData, material_type: opt.value, thickness: first })
                   setErrors((e) => ({ ...e, material: '' }))
                 }}
                 className={[
                   'px-4 py-3 rounded-xl border-2 text-left text-sm font-medium transition-all',
-                  formData.material_group === opt.value
+                  formData.material_type === opt.value
                     ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                     : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
                 ].join(' ')}
@@ -344,19 +355,19 @@ function Step2({
             {t('activation.select_thickness')}
           </label>
           <div className="flex gap-3">
-            {([2, 3] as const).map((cm) => (
+            {(MATERIAL_THICKNESS[formData.material_type] ?? [2.0, 3.0]).map((t) => (
               <button
-                key={cm}
+                key={t}
                 type="button"
-                onClick={() => setFormData({ ...formData, thickness_cm: cm })}
+                onClick={() => setFormData({ ...formData, thickness: t })}
                 className={[
                   'flex-1 py-3 rounded-xl border-2 font-semibold text-sm transition-all',
-                  formData.thickness_cm === cm
+                  formData.thickness === t
                     ? 'border-blue-600 bg-blue-600 text-white'
                     : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
                 ].join(' ')}
               >
-                {cm} cm
+                {t} cm
               </button>
             ))}
           </div>
@@ -438,7 +449,7 @@ function Step2({
             </p>
             <div className="grid grid-cols-3 gap-2 text-center text-sm">
               <div>
-                <p className="font-bold text-gray-900 dark:text-white">{catalog.recommended_rpm}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{catalog.rpm}</p>
                 <p className="text-xs text-gray-400">{t('activation.recommended_rpm')}</p>
               </div>
               <div>
@@ -500,11 +511,11 @@ function Step3({
   const machine = machines.find((m) => m.id === formData.machine_id)
 
   const { data: catalogList = [] } = useQuery({
-    queryKey: ['catalog', label.family.id, formData.material_group, label.nominal_diameter],
+    queryKey: ['catalog', label.family.id, formData.material_type, label.nominal_diameter],
     queryFn: () =>
       getCatalog({
         family_id: label.family.id,
-        material_group: formData.material_group,
+        material_type: formData.material_type || undefined,
         nominal_diameter: label.nominal_diameter,
       }),
   })
@@ -517,12 +528,12 @@ function Step3({
 
   const catalog = catalogList[0]
   const wear = wearList[0]
-  const recommendedFeed = catalog
-    ? (formData.thickness_cm === 3 ? catalog.feed_3cm : catalog.feed_2cm)
-    : null
-  const expectedLife = catalog
-    ? (formData.thickness_cm === 3 ? catalog.life_3cm : catalog.life_2cm)
-    : null
+
+  function pickT2(t: number) {
+    return catalog ? Math.abs(Number(catalog.thickness_t2) - t) < 0.01 : false
+  }
+  const recommendedFeed = catalog ? (pickT2(formData.thickness) ? catalog.feed_t2 : catalog.feed_t1) : null
+  const expectedLife    = catalog ? (pickT2(formData.thickness) ? catalog.life_t2 : catalog.life_t1) : null
 
   const expiresAt = new Date(Date.now() + 168 * 60 * 60 * 1000)
   const isWindow2 = label.activation_count >= 1
@@ -533,8 +544,8 @@ function Step3({
         unique_code: formData.unique_code,
         machine_id: formData.machine_id,
         diameter_at_activation: Number(formData.diameter_at_activation),
-        thickness_cm: formData.thickness_cm,
-        material_group: formData.material_group,
+        thickness: formData.thickness,
+        material_type: formData.material_type,
         notes: formData.notes || undefined,
       }),
     onSuccess: (data) => onSuccess(data),
@@ -552,7 +563,7 @@ function Step3({
 
   const materialOptions = FAMILY_MATERIALS[label.family.name.toUpperCase()] ?? []
   const materialLabel =
-    materialOptions.find((m) => m.value === formData.material_group)?.label ?? formData.material_group
+    materialOptions.find((m) => m.value === formData.material_type)?.label ?? formData.material_type
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
@@ -569,7 +580,7 @@ function Step3({
             ['Diameter', `${label.nominal_diameter}mm`],
             ['Lot', label.lot_number],
             ['Material', materialLabel],
-            ['Thickness', `${formData.thickness_cm}cm`],
+            ['Thickness', `${formData.thickness}cm`],
             ['Machine', machine?.name ?? '—'],
             ['Measured Diameter', `${formData.diameter_at_activation}mm`],
           ].map(([k, v]) => (
@@ -589,7 +600,7 @@ function Step3({
           </p>
           <div className="grid grid-cols-3 gap-2 text-center text-sm">
             <div>
-              <p className="font-bold text-gray-900 dark:text-white">{catalog.recommended_rpm}</p>
+              <p className="font-bold text-gray-900 dark:text-white">{catalog.rpm}</p>
               <p className="text-xs text-gray-400">{t('activation.recommended_rpm')}</p>
             </div>
             <div>
@@ -701,8 +712,8 @@ export default function ActivatePage() {
     unique_code: '',
     machine_id: '',
     diameter_at_activation: '',
-    thickness_cm: 2,
-    material_group: '',
+    thickness: 2.0,
+    material_type: '',
     notes: '',
   })
   const [activated, setActivated] = useState<Activation | null>(null)

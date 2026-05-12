@@ -83,8 +83,8 @@ function MachineRow({ machine, expanded, onToggle }: {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {machine.by_material.map((m) => (
-                  <tr key={m.material_group}>
-                    <td className="py-1.5 text-gray-700 dark:text-gray-300">{m.material_group}</td>
+                  <tr key={m.material_type}>
+                    <td className="py-1.5 text-gray-700 dark:text-gray-300">{m.material_type}</td>
                     <td className="py-1.5 text-right font-mono text-gray-900 dark:text-white">{fmt(m.meters)} m</td>
                     <td className="py-1.5 text-right text-gray-600 dark:text-gray-400">{m.sessions}</td>
                     <td className="py-1.5 text-right text-gray-500 dark:text-gray-400">{m.avg_rpm ?? '—'}</td>
@@ -133,7 +133,7 @@ export default function StatsPage() {
 
   const pieData = useMemo(() =>
     (stats?.by_material ?? []).map((m) => ({
-      name: m.material_group,
+      name: m.material_type,
       value: m.total_meters,
     })),
     [stats]
@@ -167,7 +167,7 @@ export default function StatsPage() {
     )
   }
 
-  const mostUsedMaterial = stats.by_material[0]?.material_group ?? '—'
+  const mostUsedMaterial = stats.by_material[0]?.material_type ?? '—'
 
   return (
     <AppLayout>
@@ -318,8 +318,8 @@ export default function StatsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {stats.by_material.map((m) => (
-                    <tr key={m.material_group} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{m.material_group}</td>
+                    <tr key={m.material_type} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{m.material_type}</td>
                       <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-white">{fmt(m.total_meters)} m</td>
                       <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{m.sessions}</td>
                       <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{m.avg_rpm ?? '—'}</td>

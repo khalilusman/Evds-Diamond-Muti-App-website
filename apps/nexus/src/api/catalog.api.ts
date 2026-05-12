@@ -9,14 +9,16 @@ export interface DiscFamily {
 export interface DiscCatalog {
   id: string
   family_id: string
-  material_group: string
+  material_type: string
   nominal_diameter: number
   diamond_height: number
-  recommended_rpm: number
-  feed_2cm: number
-  life_2cm: number
-  feed_3cm: number
-  life_3cm: number
+  rpm: number
+  thickness_t1: number
+  feed_t1: number
+  life_t1: number
+  thickness_t2: number
+  feed_t2: number
+  life_t2: number
   miter_feed: number
   family?: DiscFamily
 }
@@ -37,7 +39,7 @@ export const getFamilies = async (): Promise<DiscFamily[]> => {
 
 export const getCatalog = async (params?: {
   family_id?: string
-  material_group?: string
+  material_type?: string
   nominal_diameter?: number
 }): Promise<DiscCatalog[]> => {
   const { data } = await api.get('/api/disc-catalog', { params })

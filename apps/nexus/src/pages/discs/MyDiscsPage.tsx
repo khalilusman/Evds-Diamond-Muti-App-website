@@ -18,6 +18,7 @@ const MATERIAL_LABELS: Record<string, string> = {
   compact_quartz: 'Compact Quartz',
   porcelain: 'Porcelain',
   quartzite: 'Quartzite',
+  quartzite_es: 'Quartzite (Cuarcita)',
 }
 
 function borderColor(wearPct: number | null | undefined, status: string): string {
@@ -105,7 +106,7 @@ function DiscCard({ activation }: { activation: Activation }) {
   const expiresVerySoon = isActive && hoursLeft <= 24 && hoursLeft > 0
 
   const materialLabel =
-    MATERIAL_LABELS[activation.material_group ?? ''] ?? activation.material_group ?? '—'
+    MATERIAL_LABELS[activation.material_type ?? ''] ?? activation.material_type ?? '—'
 
   return (
     <div
@@ -159,7 +160,7 @@ function DiscCard({ activation }: { activation: Activation }) {
 
       {/* Material & Thickness */}
       <div className="text-xs text-gray-500 dark:text-gray-400">
-        {materialLabel} · {activation.thickness_cm}cm
+        {materialLabel} · {activation.thickness ? `${activation.thickness}cm` : '—'}
       </div>
 
       {/* Wear gauge */}

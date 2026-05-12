@@ -42,7 +42,7 @@
       "login_title": "مرحباً بعودتك",
       "login_subtitle": "سجّل دخولك إلى حسابك في EVDS",
       "register_title": "أنشئ حسابك",
-      "register_subtitle": "انضم إلى منصة EVDS Diamond"
+      "register_subtitle": "انضم إلى منصة EVDS Nexus"
     },
     "registration": {
       "company_name": "اسم الشركة",
@@ -67,7 +67,7 @@
       "step1_title": "تكوين التكاليف",
       "step2_title": "إنشاء أول آلة",
       "complete_title": "اكتمل الإعداد",
-      "complete_message": "أنت جاهز لبدء استخدام EVDS Diamond",
+      "complete_message": "أنت جاهز لبدء استخدام EVDS Nexus",
       "machine_name": "اسم الآلة",
       "machine_placeholder": "مثال: Donatoni Jet، منشار جسري 1"
     },

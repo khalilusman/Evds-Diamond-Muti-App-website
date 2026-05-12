@@ -42,7 +42,7 @@
       "login_title": "Bon retour",
       "login_subtitle": "Connectez-vous à votre compte EVDS",
       "register_title": "Créer votre compte",
-      "register_subtitle": "Rejoignez la plateforme EVDS Diamond"
+      "register_subtitle": "Rejoignez la plateforme EVDS Nexus"
     },
     "registration": {
       "company_name": "Nom de l'entreprise",
@@ -67,7 +67,7 @@
       "step1_title": "Configuration des coûts",
       "step2_title": "Créer votre première machine",
       "complete_title": "Configuration terminée",
-      "complete_message": "Vous êtes prêt à utiliser EVDS Diamond",
+      "complete_message": "Vous êtes prêt à utiliser EVDS Nexus",
       "machine_name": "Nom de la machine",
       "machine_placeholder": "ex. Donatoni Jet, Scie à pont 1"
     },

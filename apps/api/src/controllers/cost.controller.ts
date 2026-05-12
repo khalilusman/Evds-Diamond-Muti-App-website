@@ -19,31 +19,27 @@ export async function getConfig(req: Request, res: Response, next: NextFunction)
 // PUT /api/cost/config
 export async function upsertConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price, downtime_pct, waste_pct } = req.body
+    const { machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price } = req.body
 
-    if (machine_cost_hour === undefined || labor_cost_hour === undefined || energy_cost_kwh === undefined || default_disc_price === undefined) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price are required' })
+    if (machine_cost_hour === undefined || labor_cost_hour === undefined || energy_cost_kwh === undefined) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'machine_cost_hour, labor_cost_hour, and energy_cost_kwh are required' })
       return
     }
 
     const config = await prisma.costConfig.upsert({
-      where: { company_id: req.user!.companyId! },
+      where:  { company_id: req.user!.companyId! },
       update: {
         machine_cost_hour: Number(machine_cost_hour),
-        labor_cost_hour: Number(labor_cost_hour),
-        energy_cost_kwh: Number(energy_cost_kwh),
-        default_disc_price: Number(default_disc_price),
-        downtime_pct: downtime_pct !== undefined ? Number(downtime_pct) : 10,
-        waste_pct: waste_pct !== undefined ? Number(waste_pct) : 5,
+        labor_cost_hour:   Number(labor_cost_hour),
+        energy_cost_kwh:   Number(energy_cost_kwh),
+        default_disc_price: default_disc_price !== undefined ? Number(default_disc_price) : undefined,
       },
       create: {
-        company_id: req.user!.companyId!,
+        company_id:        req.user!.companyId!,
         machine_cost_hour: Number(machine_cost_hour),
-        labor_cost_hour: Number(labor_cost_hour),
-        energy_cost_kwh: Number(energy_cost_kwh),
-        default_disc_price: Number(default_disc_price),
-        downtime_pct: downtime_pct !== undefined ? Number(downtime_pct) : 10,
-        waste_pct: waste_pct !== undefined ? Number(waste_pct) : 5,
+        labor_cost_hour:   Number(labor_cost_hour),
+        energy_cost_kwh:   Number(energy_cost_kwh),
+        default_disc_price: default_disc_price !== undefined ? Number(default_disc_price) : null,
       },
     })
 
@@ -62,31 +58,27 @@ export async function createOrUpdateConfig(req: Request, res: Response, next: Ne
       return
     }
 
-    const { machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price, downtime_pct, waste_pct } = req.body
+    const { machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price } = req.body
 
-    if (machine_cost_hour === undefined || labor_cost_hour === undefined || energy_cost_kwh === undefined || default_disc_price === undefined) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'machine_cost_hour, labor_cost_hour, energy_cost_kwh, default_disc_price are required' })
+    if (machine_cost_hour === undefined || labor_cost_hour === undefined || energy_cost_kwh === undefined) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'machine_cost_hour, labor_cost_hour, and energy_cost_kwh are required' })
       return
     }
 
     const config = await prisma.costConfig.upsert({
-      where: { company_id: companyId },
+      where:  { company_id: companyId },
       update: {
         machine_cost_hour: Number(machine_cost_hour),
-        labor_cost_hour: Number(labor_cost_hour),
-        energy_cost_kwh: Number(energy_cost_kwh),
-        default_disc_price: Number(default_disc_price),
-        downtime_pct: downtime_pct !== undefined ? Number(downtime_pct) : undefined,
-        waste_pct: waste_pct !== undefined ? Number(waste_pct) : undefined,
+        labor_cost_hour:   Number(labor_cost_hour),
+        energy_cost_kwh:   Number(energy_cost_kwh),
+        default_disc_price: default_disc_price !== undefined ? Number(default_disc_price) : undefined,
       },
       create: {
-        company_id: companyId,
+        company_id:        companyId,
         machine_cost_hour: Number(machine_cost_hour),
-        labor_cost_hour: Number(labor_cost_hour),
-        energy_cost_kwh: Number(energy_cost_kwh),
-        default_disc_price: Number(default_disc_price),
-        downtime_pct: downtime_pct !== undefined ? Number(downtime_pct) : 10,
-        waste_pct: waste_pct !== undefined ? Number(waste_pct) : 5,
+        labor_cost_hour:   Number(labor_cost_hour),
+        energy_cost_kwh:   Number(energy_cost_kwh),
+        default_disc_price: default_disc_price !== undefined ? Number(default_disc_price) : null,
       },
     })
 
@@ -99,14 +91,19 @@ export async function createOrUpdateConfig(req: Request, res: Response, next: Ne
 // POST /api/cost/calculate
 export async function calculate(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { activation_id, input_method, piece_count, total_perimeter, total_linear_meters, material_price, disc_price, copies, thickness_cm, machine_cost_hour, labor_cost_hour, energy_cost_kwh, downtime_pct, waste_pct } = req.body
+    const {
+      activation_id, input_method, piece_count, total_perimeter,
+      total_linear_meters, disc_price, thickness, material_type,
+      machine_cost_hour, labor_cost_hour, energy_cost_kwh,
+      downtime_pct, waste_pct, material_price_m2, estimated_area,
+    } = req.body
 
     if (!input_method || !['DXF', 'MANUAL', 'dxf', 'manual'].includes(input_method)) {
       res.status(400).json({ error: 'VALIDATION_ERROR', message: 'input_method must be DXF or MANUAL' })
       return
     }
-    if (material_price === undefined || copies === undefined || thickness_cm === undefined) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'material_price, copies, thickness_cm are required' })
+    if (thickness === undefined) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'thickness is required' })
       return
     }
 
@@ -121,10 +118,9 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
       return
     }
 
-    const effectivePerimeter = isManual
-      ? Number(total_linear_meters) * 1000
-      : Number(total_perimeter)
-    const effectivePieceCount = isManual ? 1 : Number(piece_count)
+    const metres_to_cut = isManual
+      ? Number(total_linear_meters)
+      : Number(total_perimeter) / 1000
 
     const costConfig = await prisma.costConfig.findUnique({ where: { company_id: req.user!.companyId! } })
     if (!costConfig) {
@@ -132,50 +128,58 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
       return
     }
 
+    const effectiveMachineCost = machine_cost_hour !== undefined ? Number(machine_cost_hour) : Number(costConfig.machine_cost_hour)
+    const effectiveLaborCost   = labor_cost_hour   !== undefined ? Number(labor_cost_hour)   : Number(costConfig.labor_cost_hour)
+    const effectiveEnergyCost  = energy_cost_kwh   !== undefined ? Number(energy_cost_kwh)   : Number(costConfig.energy_cost_kwh)
+    const effectiveDowntime    = downtime_pct       !== undefined ? Number(downtime_pct)      : Number(costConfig.downtime_pct)
+    const effectiveWaste       = waste_pct          !== undefined ? Number(waste_pct)         : Number(costConfig.waste_pct)
+
     let catalogParams = null
     if (activation_id) {
       const activation = await prisma.discActivation.findUnique({
         where: { id: activation_id },
         include: { label: true },
       })
-      if (activation?.material_group) {
-        catalogParams = await prisma.discCatalog.findFirst({
-          where: {
-            family_id: activation.label.family_id,
-            nominal_diameter: activation.label.nominal_diameter,
-            material_group: activation.material_group,
-          },
-        })
+      if (activation) {
+        const effectiveMaterialType = (material_type as string | undefined) ?? activation.material_type ?? null
+        if (effectiveMaterialType) {
+          catalogParams = await prisma.discCatalog.findFirst({
+            where: {
+              family_id:        activation.label.family_id,
+              nominal_diameter: activation.label.nominal_diameter,
+              material_type:    effectiveMaterialType,
+            },
+          })
+        }
       }
     }
 
-    const effectiveDiscPrice = Number(disc_price ?? costConfig.default_disc_price)
+    const effectiveDiscPrice = Number(disc_price ?? costConfig.default_disc_price ?? 0)
 
     const result = calculateCost({
-      piece_count: effectivePieceCount,
-      total_perimeter: effectivePerimeter,
-      material_price: Number(material_price),
-      disc_price: effectiveDiscPrice,
-      copies: Number(copies),
-      thickness_cm: Number(thickness_cm) === 3 ? 3 : 2,
+      metres_to_cut,
+      disc_price:        effectiveDiscPrice,
+      thickness:         Number(thickness),
+      material_price_m2: material_price_m2 ? Number(material_price_m2) : 0,
+      estimated_area:    estimated_area    ? Number(estimated_area)    : 0,
       config: {
-        machine_cost_hour: machine_cost_hour !== undefined ? Number(machine_cost_hour) : Number(costConfig.machine_cost_hour),
-        labor_cost_hour:   labor_cost_hour   !== undefined ? Number(labor_cost_hour)   : Number(costConfig.labor_cost_hour),
-        energy_cost_kwh:   energy_cost_kwh   !== undefined ? Number(energy_cost_kwh)   : Number(costConfig.energy_cost_kwh),
-        downtime_pct:      downtime_pct      !== undefined ? Number(downtime_pct)      : Number(costConfig.downtime_pct),
-        waste_pct:         waste_pct         !== undefined ? Number(waste_pct)         : Number(costConfig.waste_pct),
+        machine_cost_hour: effectiveMachineCost,
+        labor_cost_hour:   effectiveLaborCost,
+        energy_cost_kwh:   effectiveEnergyCost,
+        downtime_pct:      effectiveDowntime,
+        waste_pct:         effectiveWaste,
       },
       catalog: catalogParams,
     })
 
     await prisma.costCalculation.create({
       data: {
-        company_id: req.user!.companyId!,
-        activation_id: activation_id ?? null,
-        input_method: input_method.toUpperCase() as 'DXF' | 'MANUAL',
-        piece_count: effectivePieceCount,
-        total_perimeter: effectivePerimeter,
-        result_json: result as object,
+        company_id:      req.user!.companyId!,
+        activation_id:   activation_id ?? null,
+        input_method:    input_method.toUpperCase() as 'DXF' | 'MANUAL',
+        piece_count:     isManual ? 1 : Number(piece_count),
+        total_perimeter: metres_to_cut * 1000,
+        result_json:     result as object,
       },
     })
 
@@ -188,15 +192,15 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
 // GET /api/cost/calculations
 export async function listCalculations(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1)
+    const page  = Math.max(1, Number(req.query.page) || 1)
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
-    const skip = (page - 1) * limit
+    const skip  = (page - 1) * limit
 
     const [calcs, total] = await prisma.$transaction([
       prisma.costCalculation.findMany({
-        where: { company_id: req.user!.companyId! },
+        where:   { company_id: req.user!.companyId! },
         skip,
-        take: limit,
+        take:    limit,
         orderBy: { created_at: 'desc' },
       }),
       prisma.costCalculation.count({ where: { company_id: req.user!.companyId! } }),

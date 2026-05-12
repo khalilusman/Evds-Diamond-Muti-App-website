@@ -58,15 +58,15 @@ export async function createTicket(req: Request, res: Response, next: NextFuncti
     const lastLog = await prisma.usageLog.findFirst({
       where: { activation_id },
       orderBy: { logged_at: 'desc' },
-      select: { material_group: true },
+      select: { material_type: true },
     })
-    const materialGroup = lastLog?.material_group ?? null
+    const materialType = lastLog?.material_type ?? null
 
     const catalogEntry = await prisma.discCatalog.findFirst({
       where: {
         family_id: activation.label.family_id,
         nominal_diameter: activation.label.nominal_diameter,
-        ...(materialGroup ? { material_group: materialGroup } : {}),
+        ...(materialType ? { material_type: materialType } : {}),
       },
     })
 
@@ -75,7 +75,7 @@ export async function createTicket(req: Request, res: Response, next: NextFuncti
           symptom_code,
           rpm_reported: rpm_reported ? Number(rpm_reported) : null,
           feed_reported: feed_reported ? Number(feed_reported) : null,
-          thickness_cm: activation.thickness_cm,
+          thickness: Number(activation.thickness),
           catalog: catalogEntry,
         })
       : {
@@ -141,8 +141,8 @@ export async function listTickets(req: Request, res: Response, next: NextFunctio
             select: {
               id: true,
               diameter_at_activation: true,
-              thickness_cm: true,
-              material_group: true,
+              thickness: true,
+              material_type: true,
               label: { select: { unique_code: true, nominal_diameter: true, family: { select: { name: true } } } },
               company: { select: { name: true } },
             },
@@ -190,7 +190,7 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       prisma.usageLog.findFirst({
         where: { activation_id: ticket.activation_id },
         orderBy: { logged_at: 'desc' },
-        select: { material_group: true },
+        select: { material_type: true },
       }),
       ticket.reported_by
         ? prisma.user.findUnique({ where: { id: ticket.reported_by }, select: { name: true, email: true } })
@@ -201,9 +201,12 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       where: {
         family_id: ticket.activation.label.family_id,
         nominal_diameter: ticket.activation.label.nominal_diameter,
-        ...(lastLog?.material_group ? { material_group: lastLog.material_group } : {}),
+        ...(lastLog?.material_type ? { material_type: lastLog.material_type } : {}),
       },
     })
+
+    const activationThickness = Number((ticket.activation as any).thickness ?? 2.0)
+    const useT2 = catalogParams ? Math.abs(Number(catalogParams.thickness_t2) - activationThickness) < 0.01 : false
 
     res.json({
       data: {
@@ -211,10 +214,10 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
         reporter,
         catalog_params: catalogParams,
         comparison: catalogParams ? {
-          rpm: { reported: ticket.rpm_reported, recommended: catalogParams.recommended_rpm },
+          rpm: { reported: ticket.rpm_reported, recommended: catalogParams.rpm },
           feed: {
             reported: ticket.feed_reported,
-            recommended: ticket.activation.thickness_cm === 3 ? catalogParams.feed_3cm : catalogParams.feed_2cm,
+            recommended: useT2 ? catalogParams.feed_t2 : catalogParams.feed_t1,
           },
         } : null,
       },

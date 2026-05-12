@@ -42,7 +42,7 @@
       "login_title": "Willkommen zurück",
       "login_subtitle": "Melden Sie sich bei Ihrem EVDS-Konto an",
       "register_title": "Konto erstellen",
-      "register_subtitle": "Treten Sie der EVDS Diamond Plattform bei"
+      "register_subtitle": "Treten Sie der EVDS Nexus Plattform bei"
     },
     "registration": {
       "company_name": "Firmenname",
@@ -67,7 +67,7 @@
       "step1_title": "Kostenkonfiguration",
       "step2_title": "Erste Maschine erstellen",
       "complete_title": "Einrichtung abgeschlossen",
-      "complete_message": "Sie können EVDS Diamond jetzt nutzen",
+      "complete_message": "Sie können EVDS Nexus jetzt nutzen",
       "machine_name": "Maschinenname",
       "machine_placeholder": "z.B. Donatoni Jet, Brückensäge 1"
     },

@@ -69,22 +69,23 @@ export default function UsagePage() {
     queryKey: [
       'catalog',
       selectedActivation?.label?.family?.id,
-      selectedActivation?.material_group,
+      selectedActivation?.material_type,
       selectedActivation?.label?.nominal_diameter,
     ],
     queryFn: () =>
       getCatalog({
         family_id: selectedActivation!.label.family.id,
-        material_group: selectedActivation!.material_group,
+        material_type: selectedActivation!.material_type ?? undefined,
         nominal_diameter: selectedActivation!.label.nominal_diameter,
       }),
     enabled: !!selectedActivation,
   })
   const catalog = catalogList[0]
-  const recommendedFeed = catalog
-    ? (selectedActivation?.thickness_cm === 3 ? catalog.feed_3cm : catalog.feed_2cm)
-    : null
-  const recommendedRpm = catalog?.recommended_rpm ?? null
+  const useT2 = catalog && selectedActivation
+    ? Math.abs(Number(catalog.thickness_t2) - (selectedActivation.thickness ?? 2.0)) < 0.01
+    : false
+  const recommendedFeed = catalog ? (useT2 ? catalog.feed_t2 : catalog.feed_t1) : null
+  const recommendedRpm = catalog?.rpm ?? null
 
   // Pre-select from URL param
   useEffect(() => {
@@ -116,8 +117,8 @@ export default function UsagePage() {
         activation_id: form.activation_id,
         current_diameter: parseFloat(form.current_diameter),
         meters_cut: parseFloat(form.meters_cut),
-        thickness_cm: selectedActivation?.thickness_cm ?? 2,
-        material_group: selectedActivation?.material_group ?? 'unknown',
+        thickness: selectedActivation?.thickness ?? 2.0,
+        material_type: selectedActivation?.material_type ?? 'unknown',
         rpm_used: form.rpm_used ? parseInt(form.rpm_used, 10) : null,
         feed_used: form.feed_used ? parseInt(form.feed_used, 10) : null,
         cut_type: form.cut_type || null,

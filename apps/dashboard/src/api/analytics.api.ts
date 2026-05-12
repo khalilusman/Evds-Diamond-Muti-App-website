@@ -23,7 +23,7 @@ export interface WeeklyPoint {
 }
 
 export interface MaterialPoint {
-  material_group: string
+  material_type: string
   count: number
   percentage: number
 }

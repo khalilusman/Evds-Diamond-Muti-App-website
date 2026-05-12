@@ -13,10 +13,12 @@ function calcWear(newDia: number, wornDia: number, currentDia: number): number {
 // POST /api/activations
 export async function createActivation(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { unique_code, machine_id, diameter_at_activation, thickness_cm, material_group, notes } = req.body
+    const { unique_code, machine_id, diameter_at_activation, notes } = req.body
+    const material_type = req.body.material_type ?? req.body.material_group
+    const thickness = req.body.thickness ?? req.body.thickness_cm
 
-    if (!unique_code || !machine_id || !diameter_at_activation || !thickness_cm || !material_group) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'unique_code, machine_id, diameter_at_activation, thickness_cm, material_group are required' })
+    if (!unique_code || !machine_id || !diameter_at_activation || !thickness || !material_type) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'unique_code, machine_id, diameter_at_activation, thickness, material_type are required' })
       return
     }
 
@@ -70,18 +72,19 @@ export async function createActivation(req: Request, res: Response, next: NextFu
       return
     }
 
-    const thick = Number(thickness_cm)
-    if (thick !== 2 && thick !== 3) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'thickness_cm must be 2 or 3' })
+    const thick = Number(thickness)
+    const VALID_THICKNESSES = [1.2, 2.0, 3.0]
+    if (!VALID_THICKNESSES.some((t) => Math.abs(t - thick) < 0.01)) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'thickness must be 1.2, 2.0, or 3.0' })
       return
     }
 
     // Validate material vs family
     const validMaterials = FAMILY_VALID_MATERIALS[label.family.name] ?? []
-    if (!validMaterials.includes(material_group)) {
+    if (!validMaterials.includes(material_type)) {
       res.status(400).json({
         error: 'INVALID_MATERIAL',
-        message: `${label.family.name} is not compatible with ${material_group}. Valid materials: ${validMaterials.join(', ')}`,
+        message: `${label.family.name} is not compatible with ${material_type}. Valid materials: ${validMaterials.join(', ')}`,
       })
       return
     }
@@ -100,8 +103,8 @@ export async function createActivation(req: Request, res: Response, next: NextFu
           user_id: req.user!.userId,
           machine_id,
           diameter_at_activation: dia,
-          thickness_cm: thick,
-          material_group: material_group ?? null,
+          thickness: thick,
+          material_type: material_type ?? null,
           activation_window: activationWindow,
           activated_at: now,
           expires_at: expiresAt,

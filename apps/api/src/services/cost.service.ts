@@ -1,83 +1,100 @@
 interface CostConfig {
   machine_cost_hour: number
-  labor_cost_hour: number
-  energy_cost_kwh: number
-  downtime_pct: number
-  waste_pct: number
+  labor_cost_hour:   number
+  energy_cost_kwh:   number
+  downtime_pct:      number
+  waste_pct:         number
 }
 
 interface CatalogParams {
-  feed_2cm: number
-  feed_3cm: number
-  life_2cm: number
-  life_3cm: number
+  thickness_t1: number
+  feed_t1:      number
+  life_t1:      number
+  thickness_t2: number
+  feed_t2:      number
+  life_t2:      number
 }
 
 interface CostInput {
-  piece_count: number
-  total_perimeter: number  // in mm
-  material_price: number
-  disc_price: number
-  copies: number
-  thickness_cm: 2 | 3
-  config: CostConfig
-  catalog?: CatalogParams | null
+  metres_to_cut:      number
+  disc_price:         number
+  thickness:          number
+  material_price_m2?: number
+  estimated_area?:    number
+  config:             CostConfig
+  catalog?:           CatalogParams | null
 }
 
 export interface CostResult {
-  cutting_time_min: number
-  machine_cost: number
-  labor_cost: number
-  disc_wear_cost: number
-  energy_cost: number
-  material_cost: number
-  subtotal: number
-  total: number
-  cost_per_meter: number
-  cost_per_piece: number
-  total_linear_meters: number
-  copies: number
-  piece_count: number
-  total_perimeter: number
+  disc_fraction:     number
+  disc_cost:         number
+  time_minutes:      number
+  machine_cost:      number
+  labor_cost:        number
+  energy_cost:       number
+  material_cost:     number
+  total:             number
+  cost_per_lm:       number
+  feed_used:         number
+  life_used:         number
+  metres_to_cut:     number
+  disc_price:        number
+  machine_cost_hour: number
+  labor_cost_hour:   number
+  energy_cost_kwh:   number
+  downtime_pct:      number
+  waste_pct:         number
 }
 
 export function calculateCost(input: CostInput): CostResult {
-  const { piece_count, total_perimeter, material_price, disc_price, copies, thickness_cm, config, catalog } = input
+  const {
+    metres_to_cut, disc_price, thickness, config, catalog,
+    material_price_m2 = 0, estimated_area = 0,
+  } = input
 
-  const feedSpeed = catalog ? (thickness_cm === 3 ? catalog.feed_3cm : catalog.feed_2cm) : 2000
-  const expectedLife = catalog ? (thickness_cm === 3 ? catalog.life_3cm : catalog.life_2cm) : 1000
+  let feed_mm_min = 2000
+  let life_lm = 1000
+  if (catalog) {
+    const useT2 = Math.abs(Number(catalog.thickness_t2) - thickness) < 0.01
+    feed_mm_min = useT2 ? catalog.feed_t2 : catalog.feed_t1
+    life_lm     = useT2 ? catalog.life_t2  : catalog.life_t1
+  }
 
-  const cutting_time_min = total_perimeter / feedSpeed
+  const time_minutes  = (metres_to_cut * 1000) / feed_mm_min
+  const time_hours    = time_minutes / 60
 
-  const machine_cost = (cutting_time_min / 60) * config.machine_cost_hour * (1 + config.downtime_pct / 100)
-  const labor_cost = (cutting_time_min / 60) * config.labor_cost_hour
-  const disc_wear_cost = (total_perimeter / (expectedLife * 1000)) * disc_price
-  const energy_cost = (cutting_time_min / 60) * 3.5 * config.energy_cost_kwh
-  const material_cost = piece_count * 0.1 * material_price * (1 + config.waste_pct / 100)
+  const disc_fraction = metres_to_cut / life_lm
+  const disc_cost     = disc_fraction * disc_price
 
-  const subtotal = machine_cost + labor_cost + disc_wear_cost + energy_cost + material_cost
-  const total = subtotal * copies
-  const total_linear_meters = total_perimeter / 1000
-  const cost_per_meter = total_linear_meters * copies > 0
-    ? total / (total_linear_meters * copies)
+  const machine_cost  = time_hours * config.machine_cost_hour * (1 + config.downtime_pct / 100)
+  const labor_cost    = time_hours * config.labor_cost_hour
+  const energy_cost   = time_hours * 3.5 * config.energy_cost_kwh
+  const material_cost = material_price_m2 > 0
+    ? material_price_m2 * estimated_area * (1 + config.waste_pct / 100)
     : 0
-  const cost_per_piece = piece_count * copies > 0 ? total / (piece_count * copies) : 0
+
+  const total       = disc_cost + machine_cost + labor_cost + energy_cost + material_cost
+  const cost_per_lm = metres_to_cut > 0 ? total / metres_to_cut : 0
 
   return {
-    cutting_time_min: round(cutting_time_min),
-    machine_cost: round(machine_cost),
-    labor_cost: round(labor_cost),
-    disc_wear_cost: round(disc_wear_cost),
-    energy_cost: round(energy_cost),
-    material_cost: round(material_cost),
-    subtotal: round(subtotal),
-    total: round(total),
-    cost_per_meter: round(cost_per_meter, 4),
-    cost_per_piece: round(cost_per_piece),
-    total_linear_meters: round(total_linear_meters, 3),
-    copies,
-    piece_count,
-    total_perimeter,
+    disc_fraction:     round(disc_fraction, 4),
+    disc_cost:         round(disc_cost),
+    time_minutes:      round(time_minutes, 1),
+    machine_cost:      round(machine_cost),
+    labor_cost:        round(labor_cost),
+    energy_cost:       round(energy_cost),
+    material_cost:     round(material_cost),
+    total:             round(total),
+    cost_per_lm:       round(cost_per_lm, 4),
+    feed_used:         feed_mm_min,
+    life_used:         life_lm,
+    metres_to_cut:     round(metres_to_cut, 3),
+    disc_price,
+    machine_cost_hour: config.machine_cost_hour,
+    labor_cost_hour:   config.labor_cost_hour,
+    energy_cost_kwh:   config.energy_cost_kwh,
+    downtime_pct:      config.downtime_pct,
+    waste_pct:         config.waste_pct,
   }
 }
 

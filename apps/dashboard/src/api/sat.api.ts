@@ -10,7 +10,7 @@ export interface SatTicketSummary {
   activation: {
     id: string
     diameter_at_activation: number
-    material_group: string | null
+    material_type: string | null
     company: { name: string }
     label: {
       unique_code: string
@@ -41,8 +41,8 @@ export interface SatTicketDetail {
   activation: {
     id: string
     diameter_at_activation: number
-    thickness_cm: number
-    material_group: string | null
+    thickness: number
+    material_type: string | null
     activated_at: string
     company: {
       name: string
@@ -62,9 +62,9 @@ export interface SatTicketDetail {
   }
   reporter: { name: string; email: string } | null
   catalog_params: {
-    recommended_rpm: number
-    feed_2cm: number
-    feed_3cm: number
+    rpm: number
+    feed_t1: number
+    feed_t2: number
   } | null
   comparison: {
     rpm: { reported: number | null; recommended: number }

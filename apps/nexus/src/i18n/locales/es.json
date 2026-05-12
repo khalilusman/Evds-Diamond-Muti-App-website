@@ -42,7 +42,7 @@
       "login_title": "Bienvenido de nuevo",
       "login_subtitle": "Inicie sesión en su cuenta EVDS",
       "register_title": "Cree su cuenta",
-      "register_subtitle": "Únase a la plataforma EVDS Diamond"
+      "register_subtitle": "Únase a la plataforma EVDS Nexus"
     },
     "registration": {
       "company_name": "Nombre de la empresa",
@@ -67,7 +67,7 @@
       "step1_title": "Configuración de costes",
       "step2_title": "Cree su primera máquina",
       "complete_title": "Configuración completada",
-      "complete_message": "Está listo para comenzar a usar EVDS Diamond",
+      "complete_message": "Está listo para comenzar a usar EVDS Nexus",
       "machine_name": "Nombre de la máquina",
       "machine_placeholder": "ej. Donatoni Jet, Sierra de puente 1"
     },

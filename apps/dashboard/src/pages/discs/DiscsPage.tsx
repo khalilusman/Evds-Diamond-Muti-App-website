@@ -46,7 +46,7 @@ export default function DiscsPage() {
   }, [activations])
 
   const materials = useMemo(() => {
-    const mats = new Set(activations.map((a) => a.material_group).filter(Boolean))
+    const mats = new Set(activations.map((a) => a.material_type).filter(Boolean))
     return Array.from(mats).sort() as string[]
   }, [activations])
 
@@ -68,7 +68,7 @@ export default function DiscsPage() {
     }
 
     if (materialFilter) {
-      list = list.filter((a) => a.material_group === materialFilter)
+      list = list.filter((a) => a.material_type === materialFilter)
     }
 
     if (wearFilter !== 'All') {
@@ -206,7 +206,7 @@ export default function DiscsPage() {
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400">
                           {a.label?.family?.name} {a.label?.nominal_diameter}mm
                         </td>
-                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{a.material_group ?? '—'}</td>
+                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{a.material_type ?? '—'}</td>
                         <td className="px-5 py-3">
                           <WearBadge pct={a.wear_pct} expired={EXPIRED_STATUSES.has(a.status)} />
                         </td>

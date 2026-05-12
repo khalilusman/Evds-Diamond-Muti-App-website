@@ -34,44 +34,44 @@ async function main() {
   console.log('  → disc_catalog (20 rows)')
 
   const catalogRows = [
-    // THE QUEEN / quartzite
-    { family_id: queen.id, material_group: 'quartzite', nominal_diameter: 350, recommended_rpm: 2000, diamond_height: 20, feed_2cm: 1800, life_2cm: 1300, feed_3cm: 1500, life_3cm: 1100, miter_feed: 800 },
-    { family_id: queen.id, material_group: 'quartzite', nominal_diameter: 400, recommended_rpm: 1800, diamond_height: 20, feed_2cm: 2000, life_2cm: 1500, feed_3cm: 1500, life_3cm: 1200, miter_feed: 801 },
-    { family_id: queen.id, material_group: 'quartzite', nominal_diameter: 450, recommended_rpm: 1600, diamond_height: 20, feed_2cm: 1800, life_2cm: 1650, feed_3cm: 1200, life_3cm: 1250, miter_feed: 802 },
-    // THE KING / porcelain
-    { family_id: king.id, material_group: 'porcelain', nominal_diameter: 350, recommended_rpm: 2700, diamond_height: 12, feed_2cm: 2500, life_2cm: 950,  feed_3cm: 1500, life_3cm: 1250, miter_feed: 1200 },
-    { family_id: king.id, material_group: 'porcelain', nominal_diameter: 400, recommended_rpm: 2600, diamond_height: 12, feed_2cm: 2500, life_2cm: 1000, feed_3cm: 1500, life_3cm: 1400, miter_feed: 1200 },
-    { family_id: king.id, material_group: 'porcelain', nominal_diameter: 450, recommended_rpm: 2400, diamond_height: 12, feed_2cm: 2500, life_2cm: 1050, feed_3cm: 1200, life_3cm: 1450, miter_feed: 1200 },
-    // THE KING / quartzite
-    { family_id: king.id, material_group: 'quartzite', nominal_diameter: 350, recommended_rpm: 2400, diamond_height: 12, feed_2cm: 1800, life_2cm: 700,  feed_3cm: 1500, life_3cm: 650,  miter_feed: 900 },
-    { family_id: king.id, material_group: 'quartzite', nominal_diameter: 400, recommended_rpm: 2200, diamond_height: 12, feed_2cm: 2000, life_2cm: 800,  feed_3cm: 1500, life_3cm: 750,  miter_feed: 900 },
-    { family_id: king.id, material_group: 'quartzite', nominal_diameter: 450, recommended_rpm: 2000, diamond_height: 12, feed_2cm: 1800, life_2cm: 850,  feed_3cm: 1200, life_3cm: 800,  miter_feed: 900 },
-    // HERCULES / porcelain
-    { family_id: hercules.id, material_group: 'porcelain', nominal_diameter: 350, recommended_rpm: 2700, diamond_height: 10, feed_2cm: 2500, life_2cm: 680,  feed_3cm: 1500, life_3cm: 1000, miter_feed: 1100 },
-    { family_id: hercules.id, material_group: 'porcelain', nominal_diameter: 400, recommended_rpm: 2600, diamond_height: 10, feed_2cm: 2500, life_2cm: 740,  feed_3cm: 1500, life_3cm: 1100, miter_feed: 1100 },
-    { family_id: hercules.id, material_group: 'porcelain', nominal_diameter: 450, recommended_rpm: 2400, diamond_height: 10, feed_2cm: 2500, life_2cm: 800,  feed_3cm: 1200, life_3cm: 1200, miter_feed: 1100 },
-    // V-ARRAY / granite
-    { family_id: varray.id, material_group: 'granite', nominal_diameter: 350, recommended_rpm: 2500, diamond_height: 20, feed_2cm: 3000, life_2cm: 1500, feed_3cm: 2800, life_3cm: 1350, miter_feed: 1500 },
-    { family_id: varray.id, material_group: 'granite', nominal_diameter: 400, recommended_rpm: 2400, diamond_height: 20, feed_2cm: 4000, life_2cm: 1700, feed_3cm: 3200, life_3cm: 1500, miter_feed: 2000 },
-    { family_id: varray.id, material_group: 'granite', nominal_diameter: 450, recommended_rpm: 2200, diamond_height: 20, feed_2cm: 3600, life_2cm: 1850, feed_3cm: 3000, life_3cm: 1650, miter_feed: 1800 },
-    { family_id: varray.id, material_group: 'granite', nominal_diameter: 500, recommended_rpm: 2000, diamond_height: 20, feed_2cm: 3800, life_2cm: 1900, feed_3cm: 3600, life_3cm: 1700, miter_feed: 1900 },
-    // V-ARRAY / compact_quartz
-    { family_id: varray.id, material_group: 'compact_quartz', nominal_diameter: 350, recommended_rpm: 2500, diamond_height: 20, feed_2cm: 5000, life_2cm: 1300, feed_3cm: 4000, life_3cm: 1100, miter_feed: 2500 },
-    { family_id: varray.id, material_group: 'compact_quartz', nominal_diameter: 400, recommended_rpm: 2400, diamond_height: 20, feed_2cm: 6000, life_2cm: 1400, feed_3cm: 4000, life_3cm: 1250, miter_feed: 3000 },
-    { family_id: varray.id, material_group: 'compact_quartz', nominal_diameter: 450, recommended_rpm: 2200, diamond_height: 20, feed_2cm: 4500, life_2cm: 1500, feed_3cm: 3500, life_3cm: 1350, miter_feed: 2200 },
-    { family_id: varray.id, material_group: 'compact_quartz', nominal_diameter: 500, recommended_rpm: 2000, diamond_height: 20, feed_2cm: 4200, life_2cm: 1600, feed_3cm: 3600, life_3cm: 1300, miter_feed: 2100 },
+    // THE QUEEN / quartzite_es  (t1=2.0cm, t2=3.0cm)
+    { family_id: queen.id, material_type: 'quartzite_es', nominal_diameter: 350, rpm: 2000, diamond_height: 20, thickness_t1: 2.0, feed_t1: 1800, life_t1: 1300, thickness_t2: 3.0, feed_t2: 1500, life_t2: 1100, miter_feed: 800  },
+    { family_id: queen.id, material_type: 'quartzite_es', nominal_diameter: 400, rpm: 1800, diamond_height: 20, thickness_t1: 2.0, feed_t1: 2000, life_t1: 1500, thickness_t2: 3.0, feed_t2: 1500, life_t2: 1200, miter_feed: 801  },
+    { family_id: queen.id, material_type: 'quartzite_es', nominal_diameter: 450, rpm: 1600, diamond_height: 20, thickness_t1: 2.0, feed_t1: 1800, life_t1: 1650, thickness_t2: 3.0, feed_t2: 1200, life_t2: 1250, miter_feed: 802  },
+    // THE KING / porcelain  (t1=2.0cm, t2=1.2cm)
+    { family_id: king.id, material_type: 'porcelain', nominal_diameter: 350, rpm: 2700, diamond_height: 12, thickness_t1: 2.0, feed_t1: 2500, life_t1: 950,  thickness_t2: 1.2, feed_t2: 1500, life_t2: 1250, miter_feed: 1200 },
+    { family_id: king.id, material_type: 'porcelain', nominal_diameter: 400, rpm: 2600, diamond_height: 12, thickness_t1: 2.0, feed_t1: 2500, life_t1: 1000, thickness_t2: 1.2, feed_t2: 1500, life_t2: 1400, miter_feed: 1200 },
+    { family_id: king.id, material_type: 'porcelain', nominal_diameter: 450, rpm: 2400, diamond_height: 12, thickness_t1: 2.0, feed_t1: 2500, life_t1: 1050, thickness_t2: 1.2, feed_t2: 1200, life_t2: 1450, miter_feed: 1200 },
+    // THE KING / quartzite international  (t1=2.0cm, t2=3.0cm)
+    { family_id: king.id, material_type: 'quartzite', nominal_diameter: 350, rpm: 2400, diamond_height: 12, thickness_t1: 2.0, feed_t1: 1800, life_t1: 700,  thickness_t2: 3.0, feed_t2: 1500, life_t2: 650,  miter_feed: 900  },
+    { family_id: king.id, material_type: 'quartzite', nominal_diameter: 400, rpm: 2200, diamond_height: 12, thickness_t1: 2.0, feed_t1: 2000, life_t1: 800,  thickness_t2: 3.0, feed_t2: 1500, life_t2: 750,  miter_feed: 900  },
+    { family_id: king.id, material_type: 'quartzite', nominal_diameter: 450, rpm: 2000, diamond_height: 12, thickness_t1: 2.0, feed_t1: 1800, life_t1: 850,  thickness_t2: 3.0, feed_t2: 1200, life_t2: 800,  miter_feed: 900  },
+    // HERCULES / porcelain  (t1=2.0cm, t2=1.2cm)
+    { family_id: hercules.id, material_type: 'porcelain', nominal_diameter: 350, rpm: 2700, diamond_height: 10, thickness_t1: 2.0, feed_t1: 2500, life_t1: 680,  thickness_t2: 1.2, feed_t2: 1500, life_t2: 1000, miter_feed: 1100 },
+    { family_id: hercules.id, material_type: 'porcelain', nominal_diameter: 400, rpm: 2600, diamond_height: 10, thickness_t1: 2.0, feed_t1: 2500, life_t1: 740,  thickness_t2: 1.2, feed_t2: 1500, life_t2: 1100, miter_feed: 1100 },
+    { family_id: hercules.id, material_type: 'porcelain', nominal_diameter: 450, rpm: 2400, diamond_height: 10, thickness_t1: 2.0, feed_t1: 2500, life_t1: 800,  thickness_t2: 1.2, feed_t2: 1200, life_t2: 1200, miter_feed: 1100 },
+    // V-ARRAY / granite  (t1=2.0cm, t2=3.0cm)
+    { family_id: varray.id, material_type: 'granite', nominal_diameter: 350, rpm: 2500, diamond_height: 20, thickness_t1: 2.0, feed_t1: 3000, life_t1: 1500, thickness_t2: 3.0, feed_t2: 2800, life_t2: 1350, miter_feed: 1500 },
+    { family_id: varray.id, material_type: 'granite', nominal_diameter: 400, rpm: 2400, diamond_height: 20, thickness_t1: 2.0, feed_t1: 4000, life_t1: 1700, thickness_t2: 3.0, feed_t2: 3200, life_t2: 1500, miter_feed: 2000 },
+    { family_id: varray.id, material_type: 'granite', nominal_diameter: 450, rpm: 2200, diamond_height: 20, thickness_t1: 2.0, feed_t1: 3600, life_t1: 1850, thickness_t2: 3.0, feed_t2: 3000, life_t2: 1650, miter_feed: 1800 },
+    { family_id: varray.id, material_type: 'granite', nominal_diameter: 500, rpm: 2000, diamond_height: 20, thickness_t1: 2.0, feed_t1: 3800, life_t1: 1900, thickness_t2: 3.0, feed_t2: 3600, life_t2: 1700, miter_feed: 1900 },
+    // V-ARRAY / compact_quartz  (t1=2.0cm, t2=3.0cm)
+    { family_id: varray.id, material_type: 'compact_quartz', nominal_diameter: 350, rpm: 2500, diamond_height: 20, thickness_t1: 2.0, feed_t1: 5000, life_t1: 1300, thickness_t2: 3.0, feed_t2: 4000, life_t2: 1100, miter_feed: 2500 },
+    { family_id: varray.id, material_type: 'compact_quartz', nominal_diameter: 400, rpm: 2400, diamond_height: 20, thickness_t1: 2.0, feed_t1: 6000, life_t1: 1400, thickness_t2: 3.0, feed_t2: 4000, life_t2: 1250, miter_feed: 3000 },
+    { family_id: varray.id, material_type: 'compact_quartz', nominal_diameter: 450, rpm: 2200, diamond_height: 20, thickness_t1: 2.0, feed_t1: 4500, life_t1: 1500, thickness_t2: 3.0, feed_t2: 3500, life_t2: 1350, miter_feed: 2200 },
+    { family_id: varray.id, material_type: 'compact_quartz', nominal_diameter: 500, rpm: 2000, diamond_height: 20, thickness_t1: 2.0, feed_t1: 4200, life_t1: 1600, thickness_t2: 3.0, feed_t2: 3600, life_t2: 1300, miter_feed: 2100 },
   ]
 
   for (const row of catalogRows) {
     await prisma.discCatalog.upsert({
       where: {
-        family_id_material_group_nominal_diameter: {
+        family_id_material_type_nominal_diameter: {
           family_id: row.family_id,
-          material_group: row.material_group,
+          material_type: row.material_type,
           nominal_diameter: row.nominal_diameter,
         },
       },
-      update: {},
+      update: row,
       create: row,
     })
   }

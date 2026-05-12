@@ -162,7 +162,7 @@ function TicketPanel({ ticketId, onClose }: { ticketId: string; onClose: () => v
                 <span className="font-medium text-gray-900 dark:text-white">{ticket.activation.machine.name}</span>
                 <span className="text-gray-500 dark:text-gray-400">{t('sat.field_material')}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {ticket.activation.material_group ?? '—'} · {ticket.activation.thickness_cm}cm
+                  {ticket.activation.material_type ?? '—'} · {ticket.activation.thickness ? `${ticket.activation.thickness}cm` : '—'}
                 </span>
                 <span className="text-gray-500 dark:text-gray-400">{t('sat.field_activated')}</span>
                 <span className="font-medium text-gray-900 dark:text-white">
@@ -430,7 +430,7 @@ export default function SatPage() {
                           <p className="text-sm font-medium text-gray-900 dark:text-white">{tk.activation.company.name}</p>
                         </td>
                         <td className="hidden sm:table-cell px-5 py-3 text-sm text-gray-600 dark:text-gray-400">
-                          {formatMaterial(tk.activation.material_group)}
+                          {formatMaterial(tk.activation.material_type)}
                         </td>
                         <td className="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">
                           {new Date(tk.created_at).toLocaleDateString()}

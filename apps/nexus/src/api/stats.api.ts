@@ -1,7 +1,7 @@
 import api from './client'
 
 export interface StatsByMaterial {
-  material_group: string
+  material_type: string
   total_meters: number
   sessions: number
   avg_rpm: number | null
@@ -9,7 +9,7 @@ export interface StatsByMaterial {
 }
 
 export interface StatsByMachineMaterial {
-  material_group: string
+  material_type: string
   meters: number
   sessions: number
   avg_rpm: number | null

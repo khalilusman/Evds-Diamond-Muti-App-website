@@ -4,8 +4,8 @@ export interface AdminActivation {
   id: string
   status: string
   diameter_at_activation: number
-  thickness_cm: number
-  material_group?: string | null
+  thickness: number
+  material_type?: string | null
   activation_window: number
   expires_at: string
   activated_at: string
