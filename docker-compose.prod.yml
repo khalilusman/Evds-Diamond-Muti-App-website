@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: evds_postgres
+    environment:
+      POSTGRES_DB: evds
+      POSTGRES_USER: evds
+      POSTGRES_PASSWORD: Evds2678
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - evds_network
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: evds_api
+    environment:
+      DATABASE_URL: postgresql://evds:Evds2678@postgres:5432/evds
+      NODE_ENV: production
+    env_file:
+      - ./apps/api/.env.production
+    depends_on:
+      - postgres
+    networks:
+      - evds_network
+    restart: unless-stopped
+    volumes:
+      - uploads_data:/app/uploads
+
+  nexus:
+    build:
+      context: ./apps/nexus
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://api.evdsdiamond.com
+    container_name: evds_nexus
+    networks:
+      - evds_network
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./apps/dashboard
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://api.evdsdiamond.com
+        VITE_ADMIN_SECRET: ${VITE_ADMIN_SECRET}
+    container_name: evds_dashboard
+    networks:
+      - evds_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: evds_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - api
+      - nexus
+      - dashboard
+    networks:
+      - evds_network
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: evds_certbot
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot
+      --email admin@evdsdiamond.com --agree-tos --no-eff-email
+      -d nexus.evdsdiamond.com
+      -d dashboard.evdsdiamond.com
+      -d api.evdsdiamond.com
+
+volumes:
+  postgres_data:
+  uploads_data:
+  certbot_certs:
+  certbot_www:
+
+networks:
+  evds_network:
+    driver: bridge
