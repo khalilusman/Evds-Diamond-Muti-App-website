@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -7,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
+// ─── Enums ──────────────
 
 enum CompanyStatus {
   PENDING
@@ -64,7 +65,7 @@ enum TokenType {
   EMAIL_CONFIRM
 }
 
-// ─── 1. companies ─────────────────────────────────────────────────────────────
+// ─── 1. companies ───────
 
 model Company {
   id                   String        @id @default(uuid())
@@ -93,7 +94,7 @@ model Company {
   @@map("companies")
 }
 
-// ─── 2. users ─────────────────────────────────────────────────────────────────
+// ─── 2. users ───────────
 
 model User {
   id            String   @id @default(uuid())
@@ -113,7 +114,7 @@ model User {
   @@map("users")
 }
 
-// ─── 3. machines ──────────────────────────────────────────────────────────────
+// ─── 3. machines ────────
 
 model Machine {
   id         String   @id @default(uuid())
@@ -129,7 +130,7 @@ model Machine {
   @@map("machines")
 }
 
-// ─── 4. disc_families ─────────────────────────────────────────────────────────
+// ─── 4. disc_families ───
 
 model DiscFamily {
   id           String  @id @default(uuid())
@@ -144,7 +145,7 @@ model DiscFamily {
   @@map("disc_families")
 }
 
-// ─── 5. disc_catalog ──────────────────────────────────────────────────────────
+// ─── 5. disc_catalog ────
 
 model DiscCatalog {
   id               String  @id @default(uuid())
@@ -167,7 +168,7 @@ model DiscCatalog {
   @@map("disc_catalog")
 }
 
-// ─── 6. wear_reference ────────────────────────────────────────────────────────
+// ─── 6. wear_reference ──
 
 model WearReference {
   id               String @id @default(uuid())
@@ -182,7 +183,7 @@ model WearReference {
   @@map("wear_reference")
 }
 
-// ─── 7. disc_labels ───────────────────────────────────────────────────────────
+// ─── 7. disc_labels ─────
 
 model DiscLabel {
   id               String      @id @default(uuid())
@@ -208,7 +209,7 @@ model DiscLabel {
   @@map("disc_labels")
 }
 
-// ─── 8. disc_activations ──────────────────────────────────────────────────────
+// ─── 8. disc_activations 
 
 model DiscActivation {
   id                    String           @id @default(uuid())
@@ -235,7 +236,7 @@ model DiscActivation {
   @@map("disc_activations")
 }
 
-// ─── 9. usage_logs ────────────────────────────────────────────────────────────
+// ─── 9. usage_logs ──────
 
 model UsageLog {
   id               String   @id @default(uuid())
@@ -260,7 +261,7 @@ model UsageLog {
   @@map("usage_logs")
 }
 
-// ─── 10. sat_tickets ──────────────────────────────────────────────────────────
+// ─── 10. sat_tickets ────
 
 model SatTicket {
   id               String    @id @default(uuid())
@@ -288,7 +289,7 @@ model SatTicket {
   @@map("sat_tickets")
 }
 
-// ─── 11. cost_configs ─────────────────────────────────────────────────────────
+// ─── 11. cost_configs ───
 
 model CostConfig {
   id                 String   @id @default(uuid())
@@ -306,7 +307,7 @@ model CostConfig {
   @@map("cost_configs")
 }
 
-// ─── 12. cost_calculations ────────────────────────────────────────────────────
+// ─── 12. cost_calculations 
 
 model CostCalculation {
   id              String      @id @default(uuid())
@@ -323,7 +324,7 @@ model CostCalculation {
   @@map("cost_calculations")
 }
 
-// ─── 13. activation_attempts ──────────────────────────────────────────────────
+// ─── 13. activation_attempts 
 
 model ActivationAttempt {
   id          String        @id @default(uuid())
@@ -341,7 +342,7 @@ model ActivationAttempt {
   @@map("activation_attempts")
 }
 
-// ─── 14. email_tokens ─────────────────────────────────────────────────────────
+// ─── 14. email_tokens ───
 
 model EmailToken {
   id         String    @id @default(uuid())
@@ -357,7 +358,7 @@ model EmailToken {
   @@map("email_tokens")
 }
 
-// ─── 15. audit_logs ───────────────────────────────────────────────────────────
+// ─── 15. audit_logs ─────
 
 model AuditLog {
   id          String   @id @default(uuid())
