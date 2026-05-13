@@ -8,7 +8,7 @@ import Button from '../../components/Button'
 import Input from '../../components/Input'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import CostResultCard from '../../components/CostResultCard'
-import { parseDxfFile, DxfParseResult } from '../../services/dxf.service'
+import { parseDxfFile, DxfResult } from '../../services/dxf.service'
 import { getCostConfig, calculateCost, getCalculations, CostResult, CostCalculation } from '../../api/cost.api'
 import { getActivations } from '../../api/activations.api'
 import { getCatalog, DiscCatalog } from '../../api/catalog.api'
@@ -79,7 +79,7 @@ function DxfUploadZone({
   onResult,
   onError,
 }: {
-  onResult: (r: DxfParseResult) => void
+  onResult: (r: DxfResult) => void
   onError: () => void
 }) {
   const [parsing, setParsing] = useState(false)
@@ -99,7 +99,7 @@ function DxfUploadZone({
       if (result.warnings.length > 0) {
         result.warnings.forEach((w) => toast.error(w, { duration: 6000 }))
       }
-      if (result.pieceCount === 0) {
+      if (result.piece_count === 0) {
         onError()
       } else {
         onResult(result)
@@ -156,28 +156,57 @@ function DxfUploadZone({
 
 // ─── DXF Result Preview ───────────────────────────────────────────────────────
 
-function DxfResultBox({ result }: { result: DxfParseResult }) {
-  const linearMeters = (result.totalPerimeter / 1000).toFixed(3)
+function DxfResultBox({ result }: { result: DxfResult }) {
   return (
     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-green-600 dark:text-green-400 font-bold text-sm">✓</span>
         <p className="font-semibold text-green-700 dark:text-green-400 text-sm">
-          {result.pieceCount} piece{result.pieceCount !== 1 ? 's' : ''} detected
+          {result.piece_count} piece{result.piece_count !== 1 ? 's' : ''} detected
         </p>
       </div>
-      <div className="space-y-1 max-h-40 overflow-y-auto mb-3">
-        {result.pieces.map((p) => (
-          <div key={p.id} className="flex justify-between text-xs text-green-700 dark:text-green-400">
-            <span>Piece {p.id}</span>
-            <span>{Math.round(p.perimeter).toLocaleString()}mm</span>
-          </div>
-        ))}
+      <div className="overflow-x-auto mb-3">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-green-600 dark:text-green-500 border-b border-green-200 dark:border-green-800">
+              <th className="text-left pb-1.5 font-medium">Piece</th>
+              <th className="text-right pb-1.5 font-medium">Perimeter</th>
+              <th className="text-right pb-1.5 font-medium">Area</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-green-100 dark:divide-green-900/50">
+            {result.pieces.map((p) => (
+              <tr key={p.id} className="text-green-700 dark:text-green-400">
+                <td className="py-1">{p.label}</td>
+                <td className="py-1 text-right">
+                  {p.perimeter_mm.toLocaleString(undefined, { maximumFractionDigits: 2 })} mm
+                </td>
+                <td className="py-1 text-right">{p.area_m2.toFixed(4)} m²</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-green-300 dark:border-green-700 font-semibold text-green-800 dark:text-green-300">
+              <td className="pt-2">TOTAL</td>
+              <td className="pt-2 text-right">
+                {result.total_perimeter_mm.toLocaleString(undefined, { maximumFractionDigits: 2 })} mm
+                <span className="block font-normal text-green-600 dark:text-green-500">
+                  = {result.total_perimeter_m.toFixed(3)} m
+                </span>
+              </td>
+              <td className="pt-2 text-right">{result.total_area_m2.toFixed(4)} m²</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
-      <div className="border-t border-green-200 dark:border-green-800 pt-2 flex justify-between text-sm font-semibold text-green-800 dark:text-green-300">
-        <span>Total</span>
-        <span>{Math.round(result.totalPerimeter).toLocaleString()}mm ({linearMeters} linear meters)</span>
-      </div>
+      {result.internal_cuts.length > 0 && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+          {result.internal_cuts.length} internal cut{result.internal_cuts.length !== 1 ? 's' : ''} detected (holes/cutouts) — not included in total
+        </p>
+      )}
+      <p className="text-xs text-green-500 dark:text-green-600 italic">
+        External perimeter only — internal holes and cutouts are excluded
+      </p>
     </div>
   )
 }
@@ -224,7 +253,7 @@ export default function CostPage() {
 
   const [inputMethod, setInputMethod] = useState<InputMethod>('MANUAL')
   const [form, setForm] = useState<FormState>(defaultForm())
-  const [dxfResult, setDxfResult] = useState<DxfParseResult | null>(null)
+  const [dxfResult, setDxfResult] = useState<DxfResult | null>(null)
   const [result, setResult] = useState<CostResult | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -338,7 +367,7 @@ export default function CostPage() {
   function validate(): boolean {
     const e: typeof errors = {}
     if (inputMethod === 'DXF') {
-      if (!dxfResult || dxfResult.pieceCount === 0) e.linear_meters = 'Upload a valid DXF file first'
+      if (!dxfResult || dxfResult.piece_count === 0) e.linear_meters = 'Upload a valid DXF file first'
     } else {
       const lm = Number(form.linear_meters)
       if (!form.linear_meters || lm <= 0) e.linear_meters = 'Must be a positive number'
@@ -368,8 +397,8 @@ export default function CostPage() {
         return calculateCost({
           ...common,
           input_method:    'DXF',
-          piece_count:     dxfResult!.pieceCount,
-          total_perimeter: dxfResult!.totalPerimeter,
+          piece_count:     dxfResult!.piece_count,
+          total_perimeter: dxfResult!.total_perimeter_mm,
         })
       } else {
         return calculateCost({
@@ -607,7 +636,13 @@ export default function CostPage() {
           {/* 6 — DXF or Manual inputs */}
           {inputMethod === 'DXF' ? (
             <div className="space-y-3">
-              <DxfUploadZone onResult={(r) => setDxfResult(r)} onError={() => setInputMethod('MANUAL')} />
+              <DxfUploadZone
+                onResult={(r) => {
+                  setDxfResult(r)
+                  setForm((f) => ({ ...f, estimated_area: String(r.total_area_m2) }))
+                }}
+                onError={() => setInputMethod('MANUAL')}
+              />
               {dxfResult && <DxfResultBox result={dxfResult} />}
               {errors.linear_meters && (
                 <p className="text-xs text-red-500">{errors.linear_meters}</p>
