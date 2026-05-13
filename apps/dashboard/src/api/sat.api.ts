@@ -73,6 +73,7 @@ export interface SatTicketDetail {
 }
 
 export interface SatListParams {
+  company_id?: string
   status?: string
   page?: number
   limit?: number

@@ -10,6 +10,7 @@ import WearBadge from '../../components/WearBadge'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { getCompany, updateCompanyStatus, getCompanyAuditLogs, getCompanyUsers, CompanyUser } from '../../api/companies.api'
 import { getCompanyActivations } from '../../api/activations.api'
+import { getSatTickets } from '../../api/sat.api'
 
 type Tab = 'info' | 'machines' | 'discs' | 'users' | 'sat' | 'audit'
 
@@ -21,6 +22,15 @@ const TABS: { key: Tab; labelKey: string }[] = [
   { key: 'sat',      labelKey: 'company_detail.tab_sat' },
   { key: 'audit',    labelKey: 'company_detail.tab_audit' },
 ]
+
+function satStatusColor(status: string): string {
+  switch (status) {
+    case 'RESOLVED':  return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+    case 'ESCALATED': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+    case 'IN_REVIEW': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+    default:          return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+  }
+}
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   return (
@@ -63,6 +73,12 @@ export default function CompanyDetailPage() {
     queryKey: ['company-audit', id],
     queryFn: () => getCompanyAuditLogs(id!),
     enabled: !!id && tab === 'audit',
+  })
+
+  const { data: satTickets = [], isLoading: satLoading } = useQuery({
+    queryKey: ['company-sat', id],
+    queryFn: () => getSatTickets({ company_id: id, limit: 50 }).then((r) => r.data),
+    enabled: !!id && tab === 'sat',
   })
 
   const statusMut = useMutation({
@@ -369,7 +385,39 @@ export default function CompanyDetailPage() {
 
             {/* SAT HISTORY TAB */}
             {tab === 'sat' && (
-              <p className="text-sm text-gray-400 dark:text-gray-500">{t('company_detail.sat_coming')}</p>
+              <div>
+                {satLoading ? (
+                  <div className="flex justify-center py-10"><LoadingSpinner size="md" className="text-blue-500" /></div>
+                ) : satTickets.length === 0 ? (
+                  <p className="text-sm text-gray-400 dark:text-gray-500">No SAT tickets yet</p>
+                ) : (
+                  <div className="space-y-1">
+                    {satTickets.map((ticket) => (
+                      <div key={ticket.id} className="py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                              {ticket.symptom_code.replace(/_/g, ' ')}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {ticket.activation.label.family.name} {ticket.activation.label.nominal_diameter}mm
+                              {' · '}{new Date(ticket.created_at).toLocaleDateString()}
+                            </p>
+                            {ticket.status === 'RESOLVED' && ticket.resolved_at && (
+                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                Resolved {new Date(ticket.resolved_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${satStatusColor(ticket.status)}`}>
+                            {ticket.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* AUDIT TRAIL TAB */}

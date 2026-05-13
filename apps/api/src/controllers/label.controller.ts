@@ -11,6 +11,15 @@ const MM = 2.8346  // points per mm
 const LABEL_W = 105 * MM
 const LABEL_H = 70 * MM
 const LOGO_PATH = path.join(process.cwd(), '..', '..', 'assets', 'evds-logo.png')
+const LABEL_GAP = 2 * MM
+
+const MATERIAL_DISPLAY: Record<string, string> = {
+  quartzite_es:   'Quartzite (Cuarcita)',
+  porcelain:      'Porcelain & Dekton',
+  quartzite:      'Quartzite',
+  granite:        'Granite',
+  compact_quartz: 'Compact Quartz',
+}
 
 // POST /api/labels/generate
 export async function generateLabels(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -226,7 +235,7 @@ export async function lookupLabel(req: Request, res: Response, next: NextFunctio
 export async function getLabelById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const label = await prisma.discLabel.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       include: {
         family: true,
         activations: {
@@ -255,7 +264,7 @@ export async function voidLabel(req: Request, res: Response, next: NextFunction)
       return
     }
 
-    const label = await prisma.discLabel.findUnique({ where: { id: req.params.id } })
+    const label = await prisma.discLabel.findUnique({ where: { id: String(req.params.id) } })
     if (!label) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Label not found' })
       return
@@ -266,7 +275,7 @@ export async function voidLabel(req: Request, res: Response, next: NextFunction)
     }
 
     const updated = await prisma.discLabel.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { status: 'VOIDED', voided_at: new Date(), void_reason: reason },
     })
 
@@ -283,6 +292,128 @@ export async function voidLabel(req: Request, res: Response, next: NextFunction)
   } catch (err) {
     next(err)
   }
+}
+
+// ─── drawLabel helper ─────────────────────────────────────────────────────────
+
+type PDFDoc = InstanceType<typeof PDFDocument>
+
+async function drawLabel(
+  doc:        PDFDoc,
+  label:      { family: { name: string }; nominal_diameter: number; unique_code: string; full_code: string; qr_url: string; lot_number: string },
+  lbX:        number,
+  lbY:        number,
+  materials:  string[],
+  logoExists: boolean,
+): Promise<void> {
+  const accentW = Math.round(3 * MM)
+  const padX    = Math.round(2 * MM)
+  const padY    = Math.round(2 * MM)
+  const lx      = lbX + accentW + padX
+  const rx      = lbX + LABEL_W - padX
+  const cw      = rx - lx
+
+  // ── border + left accent bar ───────────────────────────────────────────────
+  doc.lineWidth(0.5).rect(lbX, lbY, LABEL_W, LABEL_H).stroke('#d1d5db')
+  doc.rect(lbX, lbY, accentW, LABEL_H).fill('#1e3a8a')
+
+  let cy = lbY + padY
+
+  // ── SECTION 1: header ─────────────────────────────────────────────────────
+  if (logoExists) {
+    doc.image(LOGO_PATH, lx, cy, { height: 12, fit: [65, 12] })
+  } else {
+    doc.font('Helvetica-Bold').fontSize(8).fillColor('#1e3a8a')
+      .text('EVDS', lx, cy + 2, { lineBreak: false })
+  }
+  doc.font('Helvetica-Bold').fontSize(7).fillColor('#1e3a8a')
+    .text('DIAMOND TOOL ID', lx, cy + 2, { width: cw, align: 'right', lineBreak: false })
+  cy += 16
+
+  doc.lineWidth(0.5).moveTo(lx, cy).lineTo(rx, cy).stroke('#e5e7eb')
+  cy += 3
+
+  // ── SECTION 2: disc info (left) + QR (right) ──────────────────────────────
+  const qrSize = 40
+  const qrX    = rx - qrSize
+  const txtW   = qrX - padX - lx
+  const s2top  = cy
+
+  try {
+    const qrBuf = await QRCode.toBuffer(label.qr_url, { width: 120, margin: 1, errorCorrectionLevel: 'M' })
+    doc.image(qrBuf, qrX, s2top, { width: qrSize, height: qrSize })
+  } catch {
+    doc.lineWidth(0.5).rect(qrX, s2top, qrSize, qrSize).stroke('#d1d5db')
+  }
+  doc.font('Helvetica').fontSize(5.5).fillColor('#6b7280')
+    .text('Scan for traceability', qrX, s2top + qrSize + 2, { width: qrSize, align: 'center', lineBreak: false })
+
+  doc.font('Helvetica-Bold').fontSize(13).fillColor('#111827')
+    .text(label.family.name, lx, cy, { width: txtW, lineBreak: false })
+  cy += 15
+
+  doc.font('Helvetica').fontSize(8).fillColor('#374151')
+    .text(`Diameter: ${label.nominal_diameter} mm`, lx, cy, { width: txtW, lineBreak: false })
+  cy += 10
+
+  if (materials.length > 0) {
+    doc.font('Helvetica').fontSize(7).fillColor('#6b7280')
+      .text(materials.join(' & '), lx, cy, { width: txtW, lineBreak: false })
+    cy += 9
+  }
+
+  doc.font('Helvetica').fontSize(7).fillColor('#374151')
+    .text(`Lot: ${label.lot_number}`, lx, cy, { width: txtW, lineBreak: false })
+  cy += 9
+
+  cy = Math.max(cy, s2top + qrSize + 14) + 5
+  doc.lineWidth(0.5).moveTo(lx, cy).lineTo(rx, cy).stroke('#e5e7eb')
+  cy += 3
+
+  // ── SECTION 3: blue info box ───────────────────────────────────────────────
+  const bxH   = 30
+  const bxTop = cy
+  doc.lineWidth(0.5).rect(lx, cy, cw, bxH).fillAndStroke('#eff6ff', '#bfdbfe')
+
+  doc.font('Helvetica-Bold').fontSize(7).fillColor('#1e3a8a')
+    .text('UNLOCK YOUR CUTTING NUMBERS', lx + 4, bxTop + 4, { width: cw - 8, lineBreak: false })
+  doc.font('Helvetica').fontSize(6).fillColor('#374151')
+    .text('Register this blade in EVDS Nexus.', lx + 4, bxTop + 13, { width: cw - 90, lineBreak: false })
+  doc.font('Helvetica-Bold').fontSize(6).fillColor('#374151')
+    .text('Track meters – speed – cost per meter', lx + 4, bxTop + 21, { width: cw - 90, lineBreak: false })
+  doc.font('Helvetica-Oblique').fontSize(6).fillColor('#1e3a8a')
+    .text('Make numbers work.', lx + 4, bxTop + 13, { width: cw - 8, align: 'right', lineBreak: false })
+  cy += bxH + 4
+
+  // ── SECTION 4: serial + LOT ────────────────────────────────────────────────
+  doc.font('Helvetica-Bold').fontSize(6).fillColor('#1e3a8a')
+    .text('SERIAL', lx, cy, { lineBreak: false })
+  doc.font('Helvetica-Bold').fontSize(7).fillColor('#6b7280')
+    .text('LOT', lx, cy, { width: cw, align: 'right', lineBreak: false })
+  cy += 8
+
+  const spaced = label.unique_code.split('').join(' ')
+  doc.font('Courier-Bold').fontSize(13).fillColor('#1e3a8a')
+    .text(spaced, lx, cy, { width: cw * 0.6, lineBreak: false })
+  doc.font('Helvetica-Bold').fontSize(8).fillColor('#111827')
+    .text(label.lot_number, lx, cy + 2, { width: cw, align: 'right', lineBreak: false })
+  cy += 18
+
+  // ── SECTION 5: full reference box (anchored from bottom) ──────────────────
+  const footerH = 12
+  const refBoxH = 27
+  const footerY = lbY + LABEL_H - padY - footerH
+  const refBoxY = footerY - 3 - refBoxH
+
+  doc.lineWidth(0.5).rect(lx, refBoxY, cw, refBoxH).fillAndStroke('#f3f4f6', '#d1d5db')
+  doc.font('Helvetica-Bold').fontSize(6).fillColor('#6b7280')
+    .text('FULL REFERENCE', lx + 4, refBoxY + 4, { width: cw - 8, lineBreak: false })
+  doc.font('Courier-Bold').fontSize(8).fillColor('#111827')
+    .text(label.full_code, lx + 4, refBoxY + 13, { width: cw - 8, lineBreak: false })
+
+  // ── footer ─────────────────────────────────────────────────────────────────
+  doc.font('Helvetica-Bold').fontSize(6).fillColor('#9ca3af')
+    .text('TRACK  –  VERIFY  –  CUT', lx, footerY + 1, { width: cw, align: 'center', lineBreak: false })
 }
 
 // GET /api/labels/export/pdf/:lot_number
@@ -304,77 +435,34 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
       return
     }
 
+    // Pre-fetch materials once (same family+diameter for all labels in a lot)
+    const first = labels[0]
+    const catalogRows = await prisma.discCatalog.findMany({
+      where: { family_id: first.family_id, nominal_diameter: first.nominal_diameter },
+      select: { material_type: true },
+      distinct: ['material_type'],
+    })
+    const materials = catalogRows.map((r) => MATERIAL_DISPLAY[r.material_type] ?? r.material_type)
+
     const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true })
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename="labels-${lot_number}.pdf"`)
     doc.pipe(res)
 
-    const COLS = 2
-    const ROWS = 4
-    const PER_PAGE = COLS * ROWS
-    const marginTop = (841.89 - ROWS * LABEL_H) / 2
     const logoExists = fs.existsSync(LOGO_PATH)
+    const COLS     = 2
+    const ROWS     = 4
+    const PER_PAGE = COLS * ROWS
+    const marginTop = (841.89 - ROWS * LABEL_H - (ROWS - 1) * LABEL_GAP) / 2
 
     for (let i = 0; i < labels.length; i++) {
-      const label = labels[i]
-      const posOnPage = i % PER_PAGE
-      if (posOnPage === 0 && i > 0) doc.addPage()
-
-      const col = posOnPage % COLS
-      const row = Math.floor(posOnPage / COLS)
-      const x = col * LABEL_W
-      const y = marginTop + row * LABEL_H
-      const pad = 6
-
-      // Label border
-      doc.rect(x, y, LABEL_W, LABEL_H).stroke('#cccccc')
-
-      // QR code (right side)
-      const qrSize = 72
-      const qrX = x + LABEL_W - qrSize - pad
-      const qrY = y + pad
-      try {
-        const qrBuffer = await QRCode.toBuffer(label.qr_url, { width: qrSize, margin: 1, errorCorrectionLevel: 'M' })
-        doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize })
-      } catch {
-        doc.fontSize(6).text('QR Error', qrX, qrY + 30)
-      }
-
-      const textRight = qrX - pad
-      const textWidth = textRight - x - pad
-
-      let curY = y + pad
-
-      // Logo or brand text
-      if (logoExists) {
-        doc.image(LOGO_PATH, x + pad, curY, { width: 80, height: 18, fit: [80, 18] })
-        curY += 22
-      } else {
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#1a1a1a')
-          .text('EVDS DIAMOND', x + pad, curY, { width: textWidth })
-        curY += 14
-      }
-
-      // Family name
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#333333')
-        .text(label.family.name, x + pad, curY, { width: textWidth })
-      curY += 12
-
-      // Diameter + lot
-      doc.font('Helvetica').fontSize(8).fillColor('#555555')
-        .text(`Ø ${label.nominal_diameter} mm`, x + pad, curY, { width: textWidth })
-      curY += 11
-      doc.text(`Lot: ${label.lot_number}`, x + pad, curY, { width: textWidth })
-      curY += 14
-
-      // Unique code — large & bold
-      doc.font('Courier-Bold').fontSize(14).fillColor('#000000')
-        .text(label.unique_code, x + pad, curY, { width: textWidth, characterSpacing: 2 })
-      curY += 20
-
-      // Full code — small
-      doc.font('Courier').fontSize(6.5).fillColor('#444444')
-        .text(label.full_code, x + pad, curY, { width: LABEL_W - pad * 2 })
+      const pos = i % PER_PAGE
+      if (pos === 0 && i > 0) doc.addPage()
+      const col = pos % COLS
+      const row = Math.floor(pos / COLS)
+      const x   = col * LABEL_W
+      const y   = marginTop + row * (LABEL_H + LABEL_GAP)
+      await drawLabel(doc, labels[i], x, y, materials, logoExists)
     }
 
     doc.end()
@@ -387,8 +475,8 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
 export async function exportCsv(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const labels = await prisma.discLabel.findMany({
-      where: { lot_number: req.params.lot_number },
-      include: { family: { select: { name: true } } },
+      where: { lot_number: String(req.params.lot_number) },
+      include: { family: true },
       orderBy: { created_at: 'asc' },
     })
 

@@ -7,7 +7,6 @@ import {
 } from 'recharts'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import Button from '../../components/Button'
 import {
   getAnalyticsSummary,
   getWeekly,

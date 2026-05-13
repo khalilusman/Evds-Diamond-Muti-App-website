@@ -67,7 +67,7 @@ export async function getCatalog(req: Request, res: Response, next: NextFunction
 export async function getCatalogEntry(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const entry = await prisma.discCatalog.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       include: { family: true },
     })
     if (!entry) {

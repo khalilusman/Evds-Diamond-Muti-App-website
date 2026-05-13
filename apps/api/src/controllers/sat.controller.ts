@@ -11,7 +11,7 @@ import { runDiagnosis } from '../services/sat.service'
 
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
-    const dir = path.join(process.env.UPLOAD_DIR ?? './uploads', 'sat', req.params.id)
+    const dir = path.join(process.env.UPLOAD_DIR ?? './uploads', 'sat', String(req.params.id))
     fs.mkdirSync(dir, { recursive: true })
     cb(null, dir)
   },
@@ -76,7 +76,14 @@ export async function createTicket(req: Request, res: Response, next: NextFuncti
           rpm_reported: rpm_reported ? Number(rpm_reported) : null,
           feed_reported: feed_reported ? Number(feed_reported) : null,
           thickness: Number(activation.thickness),
-          catalog: catalogEntry,
+          catalog: {
+            rpm:          catalogEntry.rpm,
+            thickness_t2: Number(catalogEntry.thickness_t2),
+            feed_t1:      catalogEntry.feed_t1,
+            feed_t2:      catalogEntry.feed_t2,
+            life_t1:      catalogEntry.life_t1,
+            life_t2:      catalogEntry.life_t2,
+          },
         })
       : {
           auto_diagnosis: 'Catalog parameters not found — manual review required',
@@ -163,7 +170,7 @@ export async function listTickets(req: Request, res: Response, next: NextFunctio
 export async function getTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const ticket = await prisma.satTicket.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       include: {
         activation: {
           include: {
@@ -237,14 +244,14 @@ export async function resolveTicket(req: Request, res: Response, next: NextFunct
       return
     }
 
-    const ticket = await prisma.satTicket.findUnique({ where: { id: req.params.id } })
+    const ticket = await prisma.satTicket.findUnique({ where: { id: String(req.params.id) } })
     if (!ticket) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Ticket not found' })
       return
     }
 
     const updated = await prisma.satTicket.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { status: 'RESOLVED', resolved_by: req.user!.userId, resolved_at: new Date(), evds_solution },
     })
 
@@ -273,14 +280,14 @@ export async function updateTicketStatus(req: Request, res: Response, next: Next
       return
     }
 
-    const ticket = await prisma.satTicket.findUnique({ where: { id: req.params.id } })
+    const ticket = await prisma.satTicket.findUnique({ where: { id: String(req.params.id) } })
     if (!ticket) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Ticket not found' })
       return
     }
 
     const updated = await prisma.satTicket.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { status },
     })
 
@@ -295,14 +302,14 @@ export async function updateTicketStatus(req: Request, res: Response, next: Next
 export async function escalateTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { note } = req.body
-    const ticket = await prisma.satTicket.findUnique({ where: { id: req.params.id } })
+    const ticket = await prisma.satTicket.findUnique({ where: { id: String(req.params.id) } })
     if (!ticket) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Ticket not found' })
       return
     }
 
     const updated = await prisma.satTicket.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { status: 'ESCALATED', evds_solution: note ?? 'Escalated for further review' },
     })
 
@@ -316,7 +323,7 @@ export async function escalateTicket(req: Request, res: Response, next: NextFunc
 
 export async function addPhotos(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const ticket = await prisma.satTicket.findUnique({ where: { id: req.params.id } })
+    const ticket = await prisma.satTicket.findUnique({ where: { id: String(req.params.id) } })
     if (!ticket || ticket.company_id !== req.user!.companyId) {
       res.status(403).json({ error: 'FORBIDDEN', message: 'Ticket not found in your company' })
       return
@@ -330,7 +337,7 @@ export async function addPhotos(req: Request, res: Response, next: NextFunction)
 
     const newUrls = files.map((f) => `/uploads/sat/${req.params.id}/${f.filename}`)
     const updated = await prisma.satTicket.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { photo_urls: { push: newUrls } },
     })
 

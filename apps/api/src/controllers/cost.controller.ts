@@ -169,7 +169,14 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
         downtime_pct:      effectiveDowntime,
         waste_pct:         effectiveWaste,
       },
-      catalog: catalogParams,
+      catalog: catalogParams ? {
+        thickness_t1: Number(catalogParams.thickness_t1),
+        feed_t1:      catalogParams.feed_t1,
+        life_t1:      catalogParams.life_t1,
+        thickness_t2: Number(catalogParams.thickness_t2),
+        feed_t2:      catalogParams.feed_t2,
+        life_t2:      catalogParams.life_t2,
+      } : null,
     })
 
     await prisma.costCalculation.create({

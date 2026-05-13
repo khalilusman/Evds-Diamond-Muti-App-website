@@ -6,6 +6,7 @@ export interface Machine {
   company_id: string
   created_at: string
   active_disc_count: number
+  _count?: { activations: number }
 }
 
 export interface MachineActivation {

@@ -208,7 +208,7 @@ export async function listActivations(req: Request, res: Response, next: NextFun
 export async function getActivation(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const activation = await prisma.discActivation.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       include: {
         label: { include: { family: true } },
         company: { select: { id: true, name: true } },
@@ -245,14 +245,14 @@ export async function getActivation(req: Request, res: Response, next: NextFunct
 // POST /api/activations/:id/replace
 export async function replaceActivation(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const activation = await prisma.discActivation.findUnique({ where: { id: req.params.id } })
+    const activation = await prisma.discActivation.findUnique({ where: { id: String(req.params.id) } })
     if (!activation || activation.company_id !== req.user!.companyId) {
       res.status(403).json({ error: 'FORBIDDEN', message: 'Activation not found in your company' })
       return
     }
 
     const updated = await prisma.discActivation.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { status: 'REPLACED', expired_at: new Date() },
     })
 

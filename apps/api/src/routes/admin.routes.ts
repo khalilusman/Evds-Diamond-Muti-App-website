@@ -74,14 +74,14 @@ router.patch('/evds-staff/:id', async (req: Request, res: Response, next: NextFu
       return
     }
 
-    const target = await prisma.user.findUnique({ where: { id: req.params.id } })
+    const target = await prisma.user.findUnique({ where: { id: String(req.params.id) } })
     if (!target || !['EVDS_ADMIN', 'EVDS_SUPPORT'].includes(target.role)) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Staff member not found' })
       return
     }
 
     const updated = await prisma.user.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { is_active: false },
       select: { id: true, name: true, email: true, role: true, is_active: true, created_at: true },
     })

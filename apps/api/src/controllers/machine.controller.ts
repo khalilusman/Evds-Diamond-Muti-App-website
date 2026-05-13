@@ -48,14 +48,14 @@ export async function listMachines(req: Request, res: Response, next: NextFuncti
 // GET /api/machines/:id/activations
 export async function listMachineActivations(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const machine = await prisma.machine.findUnique({ where: { id: req.params.id } })
+    const machine = await prisma.machine.findUnique({ where: { id: String(req.params.id) } })
     if (!machine || machine.company_id !== req.user!.companyId) {
       res.status(403).json({ error: 'FORBIDDEN', message: 'Machine not found in your company' })
       return
     }
 
     const activations = await prisma.discActivation.findMany({
-      where: { machine_id: req.params.id, status: 'ACTIVE' },
+      where: { machine_id: String(req.params.id), status: 'ACTIVE' },
       orderBy: { activated_at: 'desc' },
       include: {
         label: { include: { family: true } },
@@ -71,7 +71,7 @@ export async function listMachineActivations(req: Request, res: Response, next: 
 // PATCH /api/machines/:id
 export async function updateMachine(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const machine = await prisma.machine.findUnique({ where: { id: req.params.id } })
+    const machine = await prisma.machine.findUnique({ where: { id: String(req.params.id) } })
     if (!machine || machine.company_id !== req.user!.companyId) {
       res.status(403).json({ error: 'FORBIDDEN', message: 'Machine not found in your company' })
       return
@@ -84,7 +84,7 @@ export async function updateMachine(req: Request, res: Response, next: NextFunct
     }
 
     const updated = await prisma.machine.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { name: name.trim() },
     })
 
@@ -97,14 +97,14 @@ export async function updateMachine(req: Request, res: Response, next: NextFunct
 // DELETE /api/machines/:id  (soft delete)
 export async function deleteMachine(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const machine = await prisma.machine.findUnique({ where: { id: req.params.id } })
+    const machine = await prisma.machine.findUnique({ where: { id: String(req.params.id) } })
     if (!machine || machine.company_id !== req.user!.companyId) {
       res.status(403).json({ error: 'FORBIDDEN', message: 'Machine not found in your company' })
       return
     }
 
     const activeCount = await prisma.discActivation.count({
-      where: { machine_id: req.params.id, status: 'ACTIVE' },
+      where: { machine_id: String(req.params.id), status: 'ACTIVE' },
     })
     if (activeCount > 0) {
       res.status(400).json({
@@ -114,7 +114,7 @@ export async function deleteMachine(req: Request, res: Response, next: NextFunct
       return
     }
 
-    await prisma.machine.update({ where: { id: req.params.id }, data: { is_active: false } })
+    await prisma.machine.update({ where: { id: String(req.params.id) }, data: { is_active: false } })
 
     res.json({ message: 'Machine deactivated' })
   } catch (err) {

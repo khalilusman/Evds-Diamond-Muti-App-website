@@ -76,7 +76,7 @@ export async function getMyCompany(req: Request, res: Response, next: NextFuncti
 export async function getCompany(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const company = await prisma.company.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       include: {
         machines: {
           where: { is_active: true },
@@ -124,14 +124,14 @@ export async function updateCompanyStatus(req: Request, res: Response, next: Nex
       return
     }
 
-    const company = await prisma.company.findUnique({ where: { id: req.params.id } })
+    const company = await prisma.company.findUnique({ where: { id: String(req.params.id) } })
     if (!company) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'Company not found' })
       return
     }
 
     const updated = await prisma.company.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { status, status_reason: reason ?? null },
     })
 

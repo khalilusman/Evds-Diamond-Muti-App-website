@@ -13,7 +13,6 @@ import {
   escalateSatTicket,
   markInReview,
   SatTicketSummary,
-  SatTicketDetail,
 } from '../../api/sat.api'
 
 const STATUS_TABS = ['All', 'OPEN', 'IN_REVIEW', 'RESOLVED', 'ESCALATED'] as const

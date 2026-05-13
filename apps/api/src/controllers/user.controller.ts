@@ -158,7 +158,7 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
 // PATCH /api/users/:id  (CUSTOMER_ADMIN)
 export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const target = await prisma.user.findUnique({ where: { id: req.params.id } })
+    const target = await prisma.user.findUnique({ where: { id: String(req.params.id) } })
 
     if (!target || target.company_id !== req.user!.companyId) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'User not found in your company' })
@@ -185,7 +185,7 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     }
 
     const updated = await prisma.user.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data,
       select: SAFE_SELECT,
     })
@@ -204,7 +204,7 @@ export async function deactivateUser(req: Request, res: Response, next: NextFunc
       return
     }
 
-    const target = await prisma.user.findUnique({ where: { id: req.params.id } })
+    const target = await prisma.user.findUnique({ where: { id: String(req.params.id) } })
 
     if (!target || target.company_id !== req.user!.companyId) {
       res.status(404).json({ error: 'NOT_FOUND', message: 'User not found in your company' })
@@ -212,7 +212,7 @@ export async function deactivateUser(req: Request, res: Response, next: NextFunc
     }
 
     await prisma.user.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { is_active: false },
     })
 

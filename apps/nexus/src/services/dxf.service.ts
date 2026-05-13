@@ -175,6 +175,9 @@ function findLoops(segments: Segment[]): Loop[] {
       (miny + maxy) / 2,
     ]
 
+    // Skip loops centred near the DXF origin — template frames sit at (0,0)
+    if (Math.abs(centroid[0]) < 100 && Math.abs(centroid[1]) < 100) continue
+
     // Approximate area using bounding box (in m²)
     const area_m2 = ((maxx - minx) * (maxy - miny)) / 1_000_000
 

@@ -221,7 +221,7 @@ export default function StatsPage() {
                   />
                   <YAxis tick={{ fontSize: 10 }} unit=" m" width={50} />
                   <Tooltip
-                    formatter={(val: number) => [`${fmt(val)} m`]}
+                    formatter={(val) => val != null ? [`${fmt(Number(val))} m`] : ['']}
                     labelFormatter={(d) => new Date(d).toLocaleDateString()}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -259,7 +259,7 @@ export default function StatsPage() {
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(val: number) => [`${fmt(val)} m`]} />
+                  <Tooltip formatter={(val) => val != null ? [`${fmt(Number(val))} m`] : ['']} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>
