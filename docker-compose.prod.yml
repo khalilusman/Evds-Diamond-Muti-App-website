@@ -42,6 +42,8 @@ services:
     networks:
       - evds_network
     restart: unless-stopped
+    volumes:
+      - certbot_www:/var/www/certbot:ro
 
   dashboard:
     build:
@@ -54,6 +56,8 @@ services:
     networks:
       - evds_network
     restart: unless-stopped
+    volumes:
+      - certbot_www:/var/www/certbot:ro
 
   nginx:
     image: nginx:alpine
