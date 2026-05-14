@@ -53,6 +53,7 @@ app.use(helmet({
 // ─── Body parsing 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.set('trust proxy', 1)
 app.use(apiLimiter)
 
 // ─── Static uploads 
