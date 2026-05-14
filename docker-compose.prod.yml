@@ -34,8 +34,8 @@ services:
 
   nexus:
     build:
-      context: ./apps/nexus
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/nexus/Dockerfile
       args:
         VITE_API_URL: https://api.evdsdiamond.com
     container_name: evds_nexus
@@ -47,8 +47,8 @@ services:
 
   dashboard:
     build:
-      context: ./apps/dashboard
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
       args:
         VITE_API_URL: https://api.evdsdiamond.com
         VITE_ADMIN_SECRET: ${VITE_ADMIN_SECRET}
