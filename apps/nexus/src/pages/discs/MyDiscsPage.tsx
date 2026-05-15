@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import blueTransparentImg from '../../assets/blue-transparent.png'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
@@ -315,7 +316,12 @@ export default function MyDiscsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="text-6xl mb-4">💿</div>
+            <img
+              src={blueTransparentImg}
+              alt="No discs"
+              className="mb-4"
+              style={{ width: '200px', height: '200px', objectFit: 'cover', objectPosition: 'center' }}
+            />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               {tab === 'ACTIVE' ? t('discs.no_discs') : 'No discs in this category'}
             </h2>
