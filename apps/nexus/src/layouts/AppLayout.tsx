@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Logo from '../components/Logo'
@@ -114,6 +114,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const inactiveClass =
     'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
 
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  const moreNavItems: NavItem[] = [
+    COST,
+    ...(isAdmin ? [MACHINES] : []),
+    SAT,
+    PROFILE,
+  ]
+
   const sideNavItems: NavItem[] = [
     MY_DISCS,
     ...(isAdmin ? [ACTIVATE] : []),
@@ -130,7 +139,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     ...(isAdmin ? [ACTIVATE] : []),
     USAGE,
     STATS,
-    SAT,
   ]
 
   return (
@@ -203,7 +211,44 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <span>{t(item.labelKey)}</span>
           </NavLink>
         ))}
+        <button
+          type="button"
+          onClick={() => setMoreOpen(true)}
+          className="flex-1 flex flex-col items-center justify-center py-2 text-xs font-medium gap-1 text-gray-500 dark:text-gray-500"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+          </svg>
+          <span>More</span>
+        </button>
       </nav>
+
+      {/* More drawer */}
+      {moreOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-50 bg-black/40"
+            onClick={() => setMoreOpen(false)}
+          />
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 rounded-t-2xl border-t border-gray-200 dark:border-gray-800">
+            <div className="p-4 space-y-1">
+              <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4" />
+              {moreNavItems.map((item) => (
+                <button
+                  key={item.to}
+                  type="button"
+                  onClick={() => { navigate(item.to); setMoreOpen(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {item.icon}
+                  {t(item.labelKey)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
