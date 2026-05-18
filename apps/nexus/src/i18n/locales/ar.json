@@ -277,6 +277,18 @@
       "contact": "جهة الاتصال",
       "update": "تحديث الملف الشخصي"
     },
+    "stats": {
+      "title": "إحصائياتي",
+      "total_metres": "إجمالي الأمتار المقطوعة",
+      "total_sessions": "إجمالي الجلسات",
+      "active_discs": "الأقراص النشطة",
+      "top_material": "المادة الرئيسية",
+      "metres_over_time": "الأمتار المقطوعة عبر الزمن",
+      "material_breakdown": "التوزيع حسب المادة",
+      "by_machine": "حسب الآلة",
+      "by_material": "حسب المادة",
+      "no_data": "لا توجد بيانات"
+    },
     "language_select": {
       "title": "اختر لغتك",
       "subtitle": "اختر لغتك المفضلة للمتابعة",

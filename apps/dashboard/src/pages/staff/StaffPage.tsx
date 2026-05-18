@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import DashboardLayout from '../../layouts/DashboardLayout'
@@ -40,6 +41,7 @@ interface AddModalProps {
 }
 
 function AddModal({ onClose, onDone }: AddModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -49,19 +51,19 @@ function AddModal({ onClose, onDone }: AddModalProps) {
   const mut = useMutation({
     mutationFn: () => {
       const e: Record<string, string> = {}
-      if (!name.trim()) e.name = 'Name is required'
-      if (!email.trim()) e.email = 'Email is required'
-      if (password.length < 8) e.password = 'Password must be at least 8 characters'
+      if (!name.trim()) e.name = t('staff.name_required')
+      if (!email.trim()) e.email = t('staff.email_required')
+      if (password.length < 8) e.password = t('staff.password_min')
       if (Object.keys(e).length) { setErrors(e); throw new Error('validation') }
       return createStaff({ name: name.trim(), email: email.trim(), password, role })
     },
     onSuccess: () => {
-      toast.success('Staff member added')
+      toast.success(t('staff.added_success'))
       onDone()
     },
     onError: (err: any) => {
       if (err?.message === 'validation') return
-      const msg = err?.response?.data?.message ?? 'Failed to add staff member'
+      const msg = err?.response?.data?.message ?? t('staff.add_error')
       toast.error(msg)
     },
   })
@@ -69,28 +71,28 @@ function AddModal({ onClose, onDone }: AddModalProps) {
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Staff Member</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('staff.add_title')}</h2>
 
-        <Input label="Name" value={name} onChange={(e) => { setName(e.target.value); setErrors({...errors, name: ''}) }} error={errors.name} />
-        <Input label="Email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setErrors({...errors, email: ''}) }} error={errors.email} />
-        <Input label="Password" type="password" value={password} onChange={(e) => { setPassword(e.target.value); setErrors({...errors, password: ''}) }} error={errors.password} />
+        <Input label={t('staff.add_name')} value={name} onChange={(e) => { setName(e.target.value); setErrors({...errors, name: ''}) }} error={errors.name} />
+        <Input label={t('staff.add_email')} type="email" value={email} onChange={(e) => { setEmail(e.target.value); setErrors({...errors, email: ''}) }} error={errors.email} />
+        <Input label={t('staff.add_password')} type="password" value={password} onChange={(e) => { setPassword(e.target.value); setErrors({...errors, password: ''}) }} error={errors.password} />
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('staff.add_role')}</label>
           <select
-            title="Role"
+            title={t('staff.add_role')}
             value={role}
             onChange={(e) => setRole(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
-            <option value="EVDS_SUPPORT">EVDS Support</option>
-            <option value="EVDS_ADMIN">EVDS Admin</option>
+            <option value="EVDS_SUPPORT">{t('staff.role_evds_support')}</option>
+            <option value="EVDS_ADMIN">{t('staff.role_evds_admin')}</option>
           </select>
         </div>
 
         <div className="flex gap-3 pt-1">
-          <Button variant="ghost" fullWidth onClick={onClose} disabled={mut.isPending}>Cancel</Button>
-          <Button fullWidth loading={mut.isPending} onClick={() => mut.mutate()}>Add Staff</Button>
+          <Button variant="ghost" fullWidth onClick={onClose} disabled={mut.isPending}>{t('staff.add_cancel')}</Button>
+          <Button fullWidth loading={mut.isPending} onClick={() => mut.mutate()}>{t('staff.add_submit')}</Button>
         </div>
       </div>
     </div>
@@ -98,6 +100,7 @@ function AddModal({ onClose, onDone }: AddModalProps) {
 }
 
 export default function StaffPage() {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const qc = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
@@ -111,30 +114,30 @@ export default function StaffPage() {
   const deactivateMut = useMutation({
     mutationFn: (id: string) => deactivateStaff(id),
     onSuccess: () => {
-      toast.success('Staff member deactivated')
+      toast.success(t('staff.deactivated_success'))
       setDeactivateTarget(null)
       qc.invalidateQueries({ queryKey: ['evds-staff'] })
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'Failed to deactivate'
+      const msg = err?.response?.data?.message ?? t('staff.deactivate_error')
       toast.error(msg)
     },
   })
 
   if (user?.role !== 'EVDS_ADMIN') {
     return (
-      <DashboardLayout title="EVDS Staff">
+      <DashboardLayout title={t('staff.title')}>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="text-5xl mb-4">🔒</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h2>
-          <p className="text-sm text-gray-400 dark:text-gray-500">This section is for EVDS Administrators only.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('staff.access_denied')}</h2>
+          <p className="text-sm text-gray-400 dark:text-gray-500">{t('staff.admin_only')}</p>
         </div>
       </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout title="EVDS Staff">
+    <DashboardLayout title={t('staff.title')}>
       {showAdd && (
         <AddModal
           onClose={() => setShowAdd(false)}
@@ -148,14 +151,14 @@ export default function StaffPage() {
       {deactivateTarget && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Deactivate {deactivateTarget.name}?</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('staff.deactivate_title', { name: deactivateTarget.name })}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              This will prevent them from logging into the dashboard. This action can be reversed via direct DB update.
+              {t('staff.deactivate_desc')}
             </p>
             <div className="flex gap-3">
-              <Button variant="ghost" fullWidth onClick={() => setDeactivateTarget(null)} disabled={deactivateMut.isPending}>Cancel</Button>
+              <Button variant="ghost" fullWidth onClick={() => setDeactivateTarget(null)} disabled={deactivateMut.isPending}>{t('common.cancel')}</Button>
               <Button variant="danger" fullWidth loading={deactivateMut.isPending} onClick={() => deactivateMut.mutate(deactivateTarget.id)}>
-                Deactivate
+                {t('staff.deactivate')}
               </Button>
             </div>
           </div>
@@ -165,26 +168,26 @@ export default function StaffPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {staff.filter((s) => s.is_active).length} active staff members
+            {t('staff.active_count', { count: staff.filter((s) => s.is_active).length })}
           </p>
-          <Button onClick={() => setShowAdd(true)}>Add Staff Member</Button>
+          <Button onClick={() => setShowAdd(true)}>{t('staff.add_button')}</Button>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow overflow-hidden">
           {isLoading ? (
             <div className="flex justify-center py-16"><LoadingSpinner size="lg" className="text-blue-500" /></div>
           ) : staff.length === 0 ? (
-            <div className="py-16 text-center text-sm text-gray-400 dark:text-gray-500">No staff members found</div>
+            <div className="py-16 text-center text-sm text-gray-400 dark:text-gray-500">{t('staff.no_staff')}</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 <tr>
-                  <th className="text-left px-5 py-3">Name</th>
-                  <th className="text-left px-5 py-3">Email</th>
-                  <th className="text-left px-5 py-3">Role</th>
-                  <th className="text-left px-5 py-3">Status</th>
-                  <th className="text-left px-5 py-3">Added</th>
-                  <th className="text-right px-5 py-3">Actions</th>
+                  <th className="text-left px-5 py-3">{t('staff.col_name')}</th>
+                  <th className="text-left px-5 py-3">{t('staff.col_email')}</th>
+                  <th className="text-left px-5 py-3">{t('staff.col_role')}</th>
+                  <th className="text-left px-5 py-3">{t('staff.col_status')}</th>
+                  <th className="text-left px-5 py-3">{t('staff.col_added')}</th>
+                  <th className="text-right px-5 py-3">{t('staff.col_actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -193,7 +196,7 @@ export default function StaffPage() {
                     <td className="px-5 py-3 font-medium text-gray-900 dark:text-white">
                       {s.name}
                       {s.id === user?.id && (
-                        <span className="ml-2 text-xs text-blue-500">(you)</span>
+                        <span className="ml-2 text-xs text-blue-500">{t('staff.you')}</span>
                       )}
                     </td>
                     <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{s.email}</td>
@@ -204,7 +207,7 @@ export default function StaffPage() {
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                       ].join(' ')}>
-                        {s.role === 'EVDS_ADMIN' ? 'Admin' : 'Support'}
+                        {s.role === 'EVDS_ADMIN' ? t('staff.role_admin') : t('staff.role_support')}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -214,7 +217,7 @@ export default function StaffPage() {
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
                       ].join(' ')}>
-                        {s.is_active ? 'Active' : 'Inactive'}
+                        {s.is_active ? t('staff.status_active') : t('staff.status_inactive')}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500">
@@ -223,7 +226,7 @@ export default function StaffPage() {
                     <td className="px-5 py-3 text-right">
                       {s.is_active && s.id !== user?.id && (
                         <Button variant="danger" size="sm" onClick={() => setDeactivateTarget(s)}>
-                          Deactivate
+                          {t('staff.deactivate')}
                         </Button>
                       )}
                     </td>

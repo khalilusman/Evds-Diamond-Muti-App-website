@@ -136,6 +136,7 @@ export default function UsagePage() {
       }))
       setFraudAlert(null)
       qc.invalidateQueries({ queryKey: ['usage-logs'] })
+      qc.invalidateQueries({ queryKey: ['activations'] })
     },
     onError: (err: any) => {
       const code = err?.response?.data?.error

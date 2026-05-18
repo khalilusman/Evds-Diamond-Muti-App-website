@@ -30,16 +30,24 @@ export async function createUsageLog(req: Request, res: Response, next: NextFunc
     }
 
     const currentDia = Number(current_diameter)
-    const activationDia = Number(activation.diameter_at_activation)
-    const maxAllowed = activationDia + 1.0
 
-    if (currentDia > maxAllowed) {
+    // Fetch latest log once — used for both fraud check and material_type fallback
+    const lastLog = await prisma.usageLog.findFirst({
+      where: { activation_id },
+      orderBy: { logged_at: 'desc' },
+      select: { current_diameter: true, material_type: true },
+    })
+
+    const previousDia = lastLog
+      ? Number(lastLog.current_diameter)
+      : Number(activation.diameter_at_activation)
+
+    if (currentDia > previousDia + 1.0) {
       res.status(400).json({
         error: 'DIAMETER_FRAUD',
-        message: 'Current diameter cannot exceed activation diameter by more than 1mm',
-        activation_diameter: activationDia,
-        max_allowed: maxAllowed,
-        provided: currentDia,
+        message: 'Current diameter must not exceed previous recorded diameter',
+        previous_diameter: previousDia,
+        submitted_diameter: currentDia,
       })
       return
     }
@@ -53,16 +61,7 @@ export async function createUsageLog(req: Request, res: Response, next: NextFunc
     // machine_id: use body value if provided, else fall back to activation's machine
     const machineId = req.body.machine_id ?? activation.machine_id
 
-    // material_type: use body value if provided, else last log's value, else 'unknown'
-    let materialType = req.body.material_type ?? null
-    if (!materialType) {
-      const lastLog = await prisma.usageLog.findFirst({
-        where: { activation_id },
-        orderBy: { logged_at: 'desc' },
-        select: { material_type: true },
-      })
-      materialType = lastLog?.material_type ?? 'unknown'
-    }
+    const materialType = req.body.material_type ?? lastLog?.material_type ?? 'unknown'
 
     const log = await prisma.usageLog.create({
       data: {

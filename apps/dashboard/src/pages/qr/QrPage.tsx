@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import Button from '../../components/Button'
@@ -7,6 +8,7 @@ import useAuthStore from '../../stores/auth.store'
 const NEXUS_URL = 'https://nexus.evdsdiamond.com'
 
 export default function QrPage() {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
 
   const { data: qrUrl, isLoading, isError } = useQuery({
@@ -26,11 +28,11 @@ export default function QrPage() {
 
   if (user?.role !== 'EVDS_ADMIN') {
     return (
-      <DashboardLayout title="QR Code">
+      <DashboardLayout title={t('qr.title')}>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="text-5xl mb-4">🔒</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h2>
-          <p className="text-sm text-gray-400 dark:text-gray-500">QR code management is for EVDS Administrators only.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('qr.access_denied')}</h2>
+          <p className="text-sm text-gray-400 dark:text-gray-500">{t('qr.admin_only')}</p>
         </div>
       </DashboardLayout>
     )
@@ -66,13 +68,13 @@ export default function QrPage() {
   }
 
   return (
-    <DashboardLayout title="QR Code">
+    <DashboardLayout title={t('qr.title')}>
       <div className="max-w-lg mx-auto space-y-6">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 flex flex-col items-center gap-5">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white text-center">Generic QR Code</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white text-center">{t('qr.generic_title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1">
-              Universal QR for marketing and packaging inserts
+              {t('qr.generic_subtitle')}
             </p>
           </div>
 
@@ -82,7 +84,7 @@ export default function QrPage() {
             </div>
           ) : isError ? (
             <div className="w-56 h-56 flex items-center justify-center text-red-400 text-sm">
-              Failed to load QR code
+              {t('qr.load_error')}
             </div>
           ) : (
             <img
@@ -96,24 +98,24 @@ export default function QrPage() {
 
           <div className="flex gap-3 w-full">
             <Button fullWidth onClick={handleDownload} disabled={!qrUrl}>
-              Download QR Code
+              {t('qr.download')}
             </Button>
             <Button variant="secondary" fullWidth onClick={handlePrint} disabled={!qrUrl}>
-              Print QR Code
+              {t('qr.print')}
             </Button>
           </div>
         </div>
 
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-400 space-y-2">
-          <p className="font-semibold">About this QR code</p>
-          <p>This QR code points to the EVDS Nexus app home page. Use it on:</p>
+          <p className="font-semibold">{t('qr.about_title')}</p>
+          <p>{t('qr.about_desc')}</p>
           <ul className="list-disc list-inside space-y-0.5 ml-1">
-            <li>Marketing materials</li>
-            <li>Packaging inserts</li>
-            <li>Your website</li>
-            <li>Trade show materials</li>
+            <li>{t('qr.about_item_marketing')}</li>
+            <li>{t('qr.about_item_packaging')}</li>
+            <li>{t('qr.about_item_website')}</li>
+            <li>{t('qr.about_item_tradeshow')}</li>
           </ul>
-          <p className="pt-1">For disc-specific QR codes with pre-filled activation codes, use the Label Generator.</p>
+          <p className="pt-1">{t('qr.about_footer')}</p>
         </div>
       </div>
     </DashboardLayout>

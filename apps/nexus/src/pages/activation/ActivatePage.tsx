@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import AppLayout from '../../layouts/AppLayout'
 import Button from '../../components/Button'
@@ -506,6 +506,7 @@ function Step3({
   onSuccess: (activation: Activation) => void
 }) {
   const { t } = useTranslation()
+  const qc = useQueryClient()
 
   const { data: machines = [] } = useQuery({ queryKey: ['machines'], queryFn: getMachines })
   const machine = machines.find((m) => m.id === formData.machine_id)
@@ -548,7 +549,11 @@ function Step3({
         material_type: formData.material_type,
         notes: formData.notes || undefined,
       }),
-    onSuccess: (data) => onSuccess(data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['activations'] })
+      qc.invalidateQueries({ queryKey: ['usage-logs'] })
+      onSuccess(data)
+    },
     onError: (err: any) => {
       const code = err.response?.data?.error
       if (code === 'ALREADY_ACTIVE') {

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import DashboardLayout from '../../layouts/DashboardLayout'
 import Input from '../../components/Input'
@@ -27,6 +28,7 @@ function isExpiringSoon(expiresAt: string): boolean {
 }
 
 export default function DiscsPage() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [familyFilter, setFamilyFilter] = useState('')
   const [materialFilter, setMaterialFilter] = useState('')
@@ -39,7 +41,14 @@ export default function DiscsPage() {
     staleTime: 60_000,
   })
 
-  // Derive filter options
+  const WEAR_TAB_LABELS: Record<WearFilter, string> = {
+    All: t('discs.filter_all'),
+    OK: t('discs.filter_ok'),
+    Warning: t('discs.filter_warning'),
+    Critical: t('discs.filter_critical'),
+    Expired: t('discs.filter_expired'),
+  }
+
   const families = useMemo(() => {
     const names = new Set(activations.map((a) => a.label?.family?.name).filter(Boolean))
     return Array.from(names).sort() as string[]
@@ -79,7 +88,6 @@ export default function DiscsPage() {
       list = list.filter((a) => isExpiringSoon(a.expires_at))
     }
 
-    // Sort: soonest expiring first
     list.sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())
 
     return list
@@ -95,14 +103,14 @@ export default function DiscsPage() {
   }
 
   return (
-    <DashboardLayout title="Disc Monitoring">
+    <DashboardLayout title={t('discs.title')}>
       <div className="space-y-5">
         {/* Filter bar */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder="Search company or disc code…"
+                placeholder={t('discs.search_placeholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -110,24 +118,24 @@ export default function DiscsPage() {
 
             {families.length > 0 && (
               <select
-                title="Filter by family"
+                title={t('discs.all_families')}
                 value={familyFilter}
                 onChange={(e) => setFamilyFilter(e.target.value)}
                 className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full sm:w-44"
               >
-                <option value="">All Families</option>
+                <option value="">{t('discs.all_families')}</option>
                 {families.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
             )}
 
             {materials.length > 0 && (
               <select
-                title="Filter by material"
+                title={t('discs.all_materials')}
                 value={materialFilter}
                 onChange={(e) => setMaterialFilter(e.target.value)}
                 className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full sm:w-44"
               >
-                <option value="">All Materials</option>
+                <option value="">{t('discs.all_materials')}</option>
                 {materials.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             )}
@@ -136,19 +144,19 @@ export default function DiscsPage() {
           {/* Wear filter tabs */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex gap-1">
-              {WEAR_TABS.map((t) => (
+              {WEAR_TABS.map((tab) => (
                 <button
-                  key={t}
+                  key={tab}
                   type="button"
-                  onClick={() => setWearFilter(t)}
+                  onClick={() => setWearFilter(tab)}
                   className={[
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                    wearFilter === t
+                    wearFilter === tab
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
                   ].join(' ')}
                 >
-                  {t}
+                  {WEAR_TAB_LABELS[tab]}
                 </button>
               ))}
             </div>
@@ -160,11 +168,11 @@ export default function DiscsPage() {
                 onChange={(e) => setExpiringSoon(e.target.checked)}
                 className="rounded"
               />
-              Expiring in 24h
+              {t('discs.expiring_24h')}
             </label>
 
             <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
-              {filtered.length} disc{filtered.length !== 1 ? 's' : ''}
+              {t('discs.disc_count', { count: filtered.length })}
             </span>
           </div>
         </div>
@@ -177,7 +185,7 @@ export default function DiscsPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-sm text-gray-400 dark:text-gray-500">
-              No discs match the current filters
+              {t('discs.no_discs')}
             </div>
           ) : (
             <>
@@ -186,15 +194,15 @@ export default function DiscsPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     <tr>
-                      <th className="text-left px-5 py-3">Company</th>
-                      <th className="text-left px-5 py-3">Machine</th>
-                      <th className="text-left px-5 py-3">Disc Code</th>
-                      <th className="text-left px-5 py-3">Family / Ø</th>
-                      <th className="text-left px-5 py-3">Material</th>
-                      <th className="text-left px-5 py-3">Wear</th>
-                      <th className="text-left px-5 py-3">Activated</th>
-                      <th className="text-left px-5 py-3">Expires</th>
-                      <th className="text-left px-5 py-3">Status</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_company')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_machine')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_disc_code')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_family_diameter')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_material')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_wear')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_activated')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_expires')}</th>
+                      <th className="text-left px-5 py-3">{t('discs.col_status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -243,7 +251,7 @@ export default function DiscsPage() {
                       <WearBadge pct={a.wear_pct} expired={EXPIRED_STATUSES.has(a.status)} />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.machine?.name ?? '—'} · Expires {new Date(a.expires_at).toLocaleDateString()}
+                      {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.machine?.name ?? '—'} · {t('discs.expires')} {new Date(a.expires_at).toLocaleDateString()}
                       {isExpiringSoon(a.expires_at) && ' ⚠️'}
                     </p>
                     <StatusBadge status={a.status} />

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -101,6 +102,7 @@ function MachineRow({ machine, expanded, onToggle }: {
 }
 
 export default function StatsPage() {
+  const { t } = useTranslation()
   const [range, setRange] = useState<Range>('all')
   const [expandedMachine, setExpandedMachine] = useState<string | null>(null)
 
@@ -175,7 +177,7 @@ export default function StatsPage() {
 
         {/* Header + date filter */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cutting History</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('stats.title')}</h1>
           <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
             {RANGE_LABELS.map(({ key, label }) => (
               <button
@@ -197,19 +199,19 @@ export default function StatsPage() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryCard icon="📏" label="Total Meters Cut" value={`${fmt(stats.total_meters)} m`} />
-          <SummaryCard icon="📋" label="Total Sessions"   value={String(stats.total_sessions)} />
-          <SummaryCard icon="💿" label="Active Discs"     value={String(stats.active_discs)} />
-          <SummaryCard icon="🪨" label="Top Material"     value={mostUsedMaterial} />
+          <SummaryCard icon="📏" label={t('stats.total_metres')}   value={`${fmt(stats.total_meters)} m`} />
+          <SummaryCard icon="📋" label={t('stats.total_sessions')} value={String(stats.total_sessions)} />
+          <SummaryCard icon="💿" label={t('stats.active_discs')}   value={String(stats.active_discs)} />
+          <SummaryCard icon="🪨" label={t('stats.top_material')}   value={mostUsedMaterial} />
         </div>
 
         {/* Charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Line chart — meters over time */}
-          <SectionCard title="Meters Cut Over Time">
+          <SectionCard title={t('stats.metres_over_time')}>
             {lineChartData.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">No data</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">{t('stats.no_data')}</p>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <LineChart data={lineChartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -241,9 +243,9 @@ export default function StatsPage() {
           </SectionCard>
 
           {/* Donut chart — material breakdown */}
-          <SectionCard title="Material Breakdown">
+          <SectionCard title={t('stats.material_breakdown')}>
             {pieData.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">No data</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">{t('stats.no_data')}</p>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
@@ -268,9 +270,9 @@ export default function StatsPage() {
         </div>
 
         {/* By Machine table */}
-        <SectionCard title="By Machine">
+        <SectionCard title={t('stats.by_machine')}>
           {stats.by_machine.length === 0 ? (
-            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">No machine data</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">{t('stats.no_data')}</p>
           ) : (
             <div className="overflow-x-auto -mx-5">
               <table className="w-full text-sm">
@@ -301,9 +303,9 @@ export default function StatsPage() {
         </SectionCard>
 
         {/* By Material table */}
-        <SectionCard title="By Material">
+        <SectionCard title={t('stats.by_material')}>
           {stats.by_material.length === 0 ? (
-            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">No material data</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">{t('stats.no_data')}</p>
           ) : (
             <div className="overflow-x-auto -mx-5">
               <table className="w-full text-sm">

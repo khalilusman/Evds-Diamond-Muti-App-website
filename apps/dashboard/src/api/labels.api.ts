@@ -63,6 +63,36 @@ export const exportPdf = async (lotNumber: string): Promise<void> => {
   window.URL.revokeObjectURL(url)
 }
 
+export interface DiscLabel {
+  id: string
+  lot_number: string
+  nominal_diameter: number
+  unique_code: string
+  full_code: string
+  status: string
+  activation_count: number
+  created_at: string
+  family: { name: string }
+}
+
+export const getLabels = async (params: { lot_number?: string; status?: string; limit?: number }): Promise<DiscLabel[]> => {
+  const { data } = await api.get('/api/labels', { params: { limit: 200, ...params } })
+  return data.data ?? []
+}
+
+export const voidLabel = async (id: string, reason: string): Promise<void> => {
+  await api.patch(`/api/labels/${id}/void`, { reason })
+}
+
+export const voidLot = async (lotNumber: string, reason: string): Promise<{ voided: number }> => {
+  const { data } = await api.patch(`/api/labels/lot/${lotNumber}/void`, { reason })
+  return data.data
+}
+
+export const deleteLabel = async (id: string): Promise<void> => {
+  await api.delete(`/api/labels/${id}`)
+}
+
 export const exportCsv = async (lotNumber: string): Promise<void> => {
   const resp = await api.get(`/api/labels/export/csv/${lotNumber}`, {
     responseType: 'blob',

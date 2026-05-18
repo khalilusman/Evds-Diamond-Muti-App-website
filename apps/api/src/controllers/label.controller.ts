@@ -294,6 +294,72 @@ export async function voidLabel(req: Request, res: Response, next: NextFunction)
   }
 }
 
+// PATCH /api/labels/lot/:lot_number/void
+export async function voidLot(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { reason } = req.body
+    if (!reason || String(reason).trim().length === 0) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'Void reason is required' })
+      return
+    }
+
+    const lotNumber = String(req.params.lot_number)
+    const count = await prisma.discLabel.count({
+      where: { lot_number: lotNumber, status: 'UNUSED' },
+    })
+    if (count === 0) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'No UNUSED labels found in this lot' })
+      return
+    }
+
+    await prisma.discLabel.updateMany({
+      where: { lot_number: lotNumber, status: 'UNUSED' },
+      data: { status: 'VOIDED', voided_at: new Date(), void_reason: reason },
+    })
+
+    await createAuditLog({
+      actorId: req.user!.userId,
+      entityType: 'disc_labels',
+      entityId: lotNumber,
+      action: 'LOT_VOIDED',
+      newValue: { lot_number: lotNumber, voided_count: count, void_reason: reason },
+    })
+
+    res.json({ data: { voided: count } })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// DELETE /api/labels/:id
+export async function deleteLabel(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const label = await prisma.discLabel.findUnique({ where: { id: String(req.params.id) } })
+    if (!label) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'Label not found' })
+      return
+    }
+    if (label.status !== 'UNUSED') {
+      res.status(400).json({ error: 'CANNOT_DELETE', message: 'Only UNUSED labels can be deleted' })
+      return
+    }
+
+    await prisma.discLabel.delete({ where: { id: String(req.params.id) } })
+
+    await createAuditLog({
+      actorId: req.user!.userId,
+      entityType: 'disc_labels',
+      entityId: label.id,
+      action: 'LABEL_DELETED',
+      oldValue: { unique_code: label.unique_code, lot_number: label.lot_number },
+    })
+
+    res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
 // ─── drawLabel helper ─────────────────────────────────────────────────────────
 
 type PDFDoc = InstanceType<typeof PDFDocument>

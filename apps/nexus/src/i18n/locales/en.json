@@ -277,6 +277,18 @@
       "contact": "Contact",
       "update": "Update Profile"
     },
+    "stats": {
+      "title": "My Statistics",
+      "total_metres": "Total Metres Cut",
+      "total_sessions": "Total Sessions",
+      "active_discs": "Active Discs",
+      "top_material": "Top Material",
+      "metres_over_time": "Metres Cut Over Time",
+      "material_breakdown": "Material Breakdown",
+      "by_machine": "By Machine",
+      "by_material": "By Material",
+      "no_data": "No data"
+    },
     "language_select": {
       "title": "Select Your Language",
       "subtitle": "Choose your preferred language to continue",

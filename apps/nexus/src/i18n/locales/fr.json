@@ -277,6 +277,18 @@
       "contact": "Contact",
       "update": "Mettre à jour le profil"
     },
+    "stats": {
+      "title": "Mes Statistiques",
+      "total_metres": "Total de mètres coupés",
+      "total_sessions": "Total des sessions",
+      "active_discs": "Disques actifs",
+      "top_material": "Matériau principal",
+      "metres_over_time": "Mètres coupés dans le temps",
+      "material_breakdown": "Répartition par matériau",
+      "by_machine": "Par machine",
+      "by_material": "Par matériau",
+      "no_data": "Aucune donnée"
+    },
     "language_select": {
       "title": "Sélectionnez votre langue",
       "subtitle": "Choisissez votre langue préférée pour continuer",

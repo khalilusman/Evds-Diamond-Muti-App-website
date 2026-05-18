@@ -277,6 +277,18 @@
       "contact": "Kontakt",
       "update": "Profil aktualisieren"
     },
+    "stats": {
+      "title": "Meine Statistiken",
+      "total_metres": "Gesamt geschnittene Meter",
+      "total_sessions": "Gesamtsitzungen",
+      "active_discs": "Aktive Scheiben",
+      "top_material": "Hauptmaterial",
+      "metres_over_time": "Meter über Zeit geschnitten",
+      "material_breakdown": "Materialaufschlüsselung",
+      "by_machine": "Nach Maschine",
+      "by_material": "Nach Material",
+      "no_data": "Keine Daten"
+    },
     "language_select": {
       "title": "Sprache auswählen",
       "subtitle": "Wählen Sie Ihre bevorzugte Sprache, um fortzufahren",

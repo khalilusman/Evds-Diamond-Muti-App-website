@@ -18,7 +18,7 @@ i18n
     fallbackLng: 'es',
     defaultNS: 'translation',
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
       lookupLocalStorage: 'evds_language',
     },
