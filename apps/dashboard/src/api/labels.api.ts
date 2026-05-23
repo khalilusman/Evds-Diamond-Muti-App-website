@@ -12,9 +12,8 @@ export interface LotSummary {
   nominal_diameter: number
   total: number
   unused: number
-  active: number
+  used: number
   expired_w1: number
-  permanently_used: number
   voided: number
   generated_at: string
 }
@@ -47,10 +46,11 @@ export const generateLabels = async (payload: GeneratePayload): Promise<Generate
   return data.data
 }
 
-export const exportPdf = async (lotNumber: string): Promise<void> => {
+export const exportPdf = async (lotNumber: string, familyId: string, nominalDiameter: number): Promise<void> => {
   const base = import.meta.env.VITE_API_URL || 'http://localhost:3000'
   const token = localStorage.getItem('evds_dashboard_token') ?? ''
-  const response = await fetch(`${base}/api/labels/export/pdf/${lotNumber}`, {
+  const params = new URLSearchParams({ family_id: familyId, nominal_diameter: String(nominalDiameter) })
+  const response = await fetch(`${base}/api/labels/export/pdf/${lotNumber}?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!response.ok) throw new Error(`Export failed: ${response.status}`)

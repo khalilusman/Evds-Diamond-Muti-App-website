@@ -61,6 +61,7 @@ export interface SatTicketDetail {
     }
   }
   reporter: { name: string; email: string } | null
+  resolver: { id: string; name: string; email: string } | null
   catalog_params: {
     rpm: number
     feed_t1: number

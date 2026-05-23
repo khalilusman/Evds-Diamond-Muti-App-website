@@ -281,6 +281,8 @@ model SatTicket {
   resolved_by      String?
   status           SatStatus @default(OPEN)
   photo_urls       String[]
+  material_name    String?   @db.Text
+  material_brand   String?   @db.VarChar(100)
   created_at       DateTime  @default(now())
   resolved_at      DateTime?
 

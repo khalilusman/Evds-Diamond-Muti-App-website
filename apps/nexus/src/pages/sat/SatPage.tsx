@@ -46,6 +46,8 @@ interface SatForm {
   rpm_reported: string
   feed_reported: string
   diameter_reported: string
+  material_name: string
+  material_brand: string
 }
 
 const defaultForm = (): SatForm => ({
@@ -55,6 +57,8 @@ const defaultForm = (): SatForm => ({
   rpm_reported: '',
   feed_reported: '',
   diameter_reported: '',
+  material_name: '',
+  material_brand: '',
 })
 
 type TicketFilter = 'ALL' | 'OPEN' | 'RESOLVED' | 'ESCALATED'
@@ -137,14 +141,14 @@ function DiagnosisCard({
         {(catalogRpm !== null || catalogFeed !== null) && (
           <div className="border-t border-green-200 dark:border-green-800 pt-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-              Parameters Comparison
+              {t('sat.params_comparison')}
             </p>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 dark:text-gray-500">
-                  <th className="text-left pb-1 font-medium">Parameter</th>
-                  <th className="text-center pb-1 font-medium">Catalog</th>
-                  <th className="text-center pb-1 font-medium">You Used</th>
+                  <th className="text-left pb-1 font-medium">{t('sat.col_parameter')}</th>
+                  <th className="text-center pb-1 font-medium">{t('sat.col_catalog')}</th>
+                  <th className="text-center pb-1 font-medium">{t('sat.col_you_used')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-green-200 dark:divide-green-800">
@@ -203,7 +207,7 @@ function DiagnosisCard({
             </p>
             {!showUpload && (
               <Button size="sm" variant="secondary" onClick={() => setShowUpload(true)}>
-                Add Photos
+                {t('sat.add_photos')}
               </Button>
             )}
           </div>
@@ -214,7 +218,7 @@ function DiagnosisCard({
       )}
       {photosUploaded && (
         <p className="text-xs text-green-600 dark:text-green-400 text-center">
-          ✓ Photos uploaded
+          {t('sat.photos_uploaded')}
         </p>
       )}
 
@@ -224,7 +228,7 @@ function DiagnosisCard({
           {t('sat.escalate')}
         </Button>
         <Button fullWidth onClick={onDone}>
-          Done
+          {t('sat.done')}
         </Button>
       </div>
     </div>
@@ -240,6 +244,7 @@ function ReportIssueTab() {
 
   const [step, setStep] = useState<ReportStep>(1)
   const [form, setForm] = useState<SatForm>(defaultForm())
+  const [stepErrors, setStepErrors] = useState<Partial<Record<keyof SatForm, string>>>({})
   const [createdTicket, setCreatedTicket] = useState<SatTicket | null>(null)
 
   const { data: activations = [], isLoading: activationsLoading } = useQuery({
@@ -291,6 +296,8 @@ function ReportIssueTab() {
         rpm_reported: form.rpm_reported ? Number(form.rpm_reported) : null,
         feed_reported: form.feed_reported ? Number(form.feed_reported) : null,
         diameter_reported: form.diameter_reported ? Number(form.diameter_reported) : null,
+        material_name: form.material_name || undefined,
+        material_brand: form.material_brand || undefined,
       }),
     onSuccess: (ticket) => {
       setCreatedTicket(ticket)
@@ -302,7 +309,7 @@ function ReportIssueTab() {
   const escalateMut = useMutation({
     mutationFn: () => escalateTicket(createdTicket!.id),
     onSuccess: () => {
-      toast.success('Ticket escalated to EVDS support')
+      toast.success(t('sat.escalated_toast'))
       qc.invalidateQueries({ queryKey: ['sat-tickets'] })
     },
     onError: () => toast.error(t('errors.generic')),
@@ -417,6 +424,16 @@ function ReportIssueTab() {
 
   // ── Step 3: Operating data ──
   if (step === 3) {
+    function handleNext() {
+      const e: Partial<Record<keyof SatForm, string>> = {}
+      if (!form.rpm_reported) e.rpm_reported = t('sat.rpm_required')
+      if (!form.feed_reported) e.feed_reported = t('sat.feed_required')
+      if (!form.material_name) e.material_name = t('sat.material_name_required')
+      if (!form.material_brand) e.material_brand = t('sat.material_brand_required')
+      setStepErrors(e)
+      if (Object.keys(e).length === 0) setStep(4)
+    }
+
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
@@ -428,15 +445,35 @@ function ReportIssueTab() {
             ← {t('common.back')}
           </button>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            Operating Data ({t('common.optional')})
+            {t('sat.operating_data')}
           </h2>
         </div>
 
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Providing these values helps us give a more accurate diagnosis.
-        </p>
-
         <div className="space-y-4">
+          <Input
+            label={t('sat.material_name')}
+            type="text"
+            placeholder={t('sat.material_name_placeholder')}
+            value={form.material_name}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, material_name: e.target.value }))
+              setStepErrors((er) => ({ ...er, material_name: undefined }))
+            }}
+            error={stepErrors.material_name}
+          />
+
+          <Input
+            label={t('sat.material_brand')}
+            type="text"
+            placeholder={t('sat.material_brand_placeholder')}
+            value={form.material_brand}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, material_brand: e.target.value }))
+              setStepErrors((er) => ({ ...er, material_brand: undefined }))
+            }}
+            error={stepErrors.material_brand}
+          />
+
           <div>
             <Input
               label={t('sat.rpm_reported')}
@@ -444,11 +481,15 @@ function ReportIssueTab() {
               placeholder={catalog ? String(catalog.rpm) : '0'}
               min="0"
               value={form.rpm_reported}
-              onChange={(e) => setForm((f) => ({ ...f, rpm_reported: e.target.value }))}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, rpm_reported: e.target.value }))
+                setStepErrors((er) => ({ ...er, rpm_reported: undefined }))
+              }}
+              error={stepErrors.rpm_reported}
             />
-            {catalog && (
+            {catalog && !stepErrors.rpm_reported && (
               <p className="mt-1 text-xs text-gray-400">
-                Catalog recommends: {catalog.rpm} RPM
+                {t('sat.catalog_recommends_rpm', { rpm: catalog.rpm })}
               </p>
             )}
           </div>
@@ -460,17 +501,21 @@ function ReportIssueTab() {
               placeholder={catalogFeed ? String(catalogFeed) : '0'}
               min="0"
               value={form.feed_reported}
-              onChange={(e) => setForm((f) => ({ ...f, feed_reported: e.target.value }))}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, feed_reported: e.target.value }))
+                setStepErrors((er) => ({ ...er, feed_reported: undefined }))
+              }}
+              error={stepErrors.feed_reported}
             />
-            {catalogFeed !== null && (
+            {catalogFeed !== null && !stepErrors.feed_reported && (
               <p className="mt-1 text-xs text-gray-400">
-                Catalog recommends: {catalogFeed} mm/min
+                {t('sat.catalog_recommends_feed', { feed: catalogFeed })}
               </p>
             )}
           </div>
 
           <Input
-            label={t('sat.diameter_reported')}
+            label={`${t('sat.diameter_reported')} (${t('common.optional')})`}
             type="number"
             step="0.1"
             min="0"
@@ -480,14 +525,9 @@ function ReportIssueTab() {
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button variant="secondary" fullWidth onClick={() => setStep(4)}>
-            Skip
-          </Button>
-          <Button fullWidth onClick={() => setStep(4)}>
-            {t('common.next')}
-          </Button>
-        </div>
+        <Button fullWidth onClick={handleNext}>
+          {t('common.next')}
+        </Button>
       </div>
     )
   }
@@ -517,7 +557,7 @@ function ReportIssueTab() {
           onChange={(e) => setForm((f) => ({ ...f, symptom_detail: e.target.value }))}
           rows={4}
           maxLength={1000}
-          placeholder="Describe what you are experiencing in detail..."
+          placeholder={t('sat.detail_placeholder')}
           className="w-full px-4 py-3 rounded-xl border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none text-sm"
         />
       </div>
@@ -525,13 +565,13 @@ function ReportIssueTab() {
       {/* Summary */}
       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-sm space-y-1">
         <div className="flex justify-between text-gray-600 dark:text-gray-400">
-          <span>Disc</span>
+          <span>{t('sat.summary_disc')}</span>
           <span className="font-medium text-gray-900 dark:text-white">
             {selectedActivation?.label?.family?.name} — {selectedActivation?.label?.nominal_diameter}mm
           </span>
         </div>
         <div className="flex justify-between text-gray-600 dark:text-gray-400">
-          <span>Symptom</span>
+          <span>{t('sat.summary_symptom')}</span>
           <span className="font-medium text-gray-900 dark:text-white">
             {SYMPTOM_LIST.find((s) => s.code === form.symptom_code)?.emoji}{' '}
             {t(`sat.symptoms.${form.symptom_code as SymptomCode}` as any)}
@@ -660,7 +700,7 @@ function MyTicketsTab() {
   const filtered = filter === 'ALL' ? tickets : tickets.filter((tk) => tk.status === filter)
 
   const FILTER_TABS: { key: TicketFilter; label: string }[] = [
-    { key: 'ALL', label: 'All' },
+    { key: 'ALL', label: t('sat.filter_all') },
     { key: 'OPEN', label: t('sat.status_open') },
     { key: 'RESOLVED', label: t('sat.status_resolved') },
     { key: 'ESCALATED', label: t('sat.status_escalated') },
@@ -696,7 +736,7 @@ function MyTicketsTab() {
           <div className="text-5xl mb-4">🔧</div>
           <p className="text-gray-500 dark:text-gray-400 font-medium">{t('sat.no_tickets')}</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            Report an issue with one of your discs
+            {t('sat.report_hint')}
           </p>
         </div>
       ) : (
@@ -720,7 +760,7 @@ export default function SatPage() {
 
   const PAGE_TABS: { key: PageTab; label: string }[] = [
     { key: 'report', label: t('sat.new_ticket') },
-    { key: 'tickets', label: 'My Tickets' },
+    { key: 'tickets', label: t('sat.my_tickets') },
   ]
 
   return (

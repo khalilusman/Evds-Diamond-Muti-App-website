@@ -56,6 +56,7 @@ interface FormState {
   energy_cost_kwh:   string
   downtime_pct:      string
   waste_pct:         string
+  multiplier:        string
 }
 
 const defaultForm = (): FormState => ({
@@ -71,6 +72,7 @@ const defaultForm = (): FormState => ({
   energy_cost_kwh:   '',
   downtime_pct:      '',
   waste_pct:         '',
+  multiplier:        '1.0',
 })
 
 // ─── DXF Upload Zone ──────────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ function DxfUploadZone({
   onResult: (r: DxfResult) => void
   onError: () => void
 }) {
+  const { t } = useTranslation()
   const [parsing, setParsing] = useState(false)
   const [fileName, setFileName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -89,7 +92,7 @@ function DxfUploadZone({
   async function handleFile(file: File | null) {
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.dxf')) {
-      toast.error('Please upload a .dxf file')
+      toast.error(t('cost.dxf_error_format'))
       return
     }
     setFileName(file.name)
@@ -105,7 +108,7 @@ function DxfUploadZone({
         onResult(result)
       }
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to parse DXF file')
+      toast.error(err.message ?? t('cost.dxf_error_parse'))
       onError()
     } finally {
       setParsing(false)
@@ -128,16 +131,16 @@ function DxfUploadZone({
         {parsing ? (
           <div className="flex flex-col items-center gap-2">
             <LoadingSpinner size="md" className="text-blue-600" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">Analysing file…</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('cost.dxf_analysing')}</p>
           </div>
         ) : (
           <>
             <div className="text-3xl mb-2">📐</div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {fileName || 'Drop DXF file here or click to browse'}
+              {fileName || t('cost.dxf_drop')}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              .dxf files only · Max 10MB · Parsed client-side
+              {t('cost.dxf_hint_text')}
             </p>
           </>
         )}
@@ -157,21 +160,22 @@ function DxfUploadZone({
 // ─── DXF Result Preview ───────────────────────────────────────────────────────
 
 function DxfResultBox({ result }: { result: DxfResult }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-green-600 dark:text-green-400 font-bold text-sm">✓</span>
         <p className="font-semibold text-green-700 dark:text-green-400 text-sm">
-          {result.piece_count} piece{result.piece_count !== 1 ? 's' : ''} detected
+          {t('cost.dxf_detected', { count: result.piece_count })}
         </p>
       </div>
       <div className="overflow-x-auto mb-3">
         <table className="w-full text-xs">
           <thead>
             <tr className="text-green-600 dark:text-green-500 border-b border-green-200 dark:border-green-800">
-              <th className="text-left pb-1.5 font-medium">Piece</th>
-              <th className="text-right pb-1.5 font-medium">Perimeter</th>
-              <th className="text-right pb-1.5 font-medium">Area</th>
+              <th className="text-left pb-1.5 font-medium">{t('cost.dxf_col_piece')}</th>
+              <th className="text-right pb-1.5 font-medium">{t('cost.dxf_col_perimeter')}</th>
+              <th className="text-right pb-1.5 font-medium">{t('cost.dxf_col_area')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-green-100 dark:divide-green-900/50">
@@ -187,7 +191,7 @@ function DxfResultBox({ result }: { result: DxfResult }) {
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-green-300 dark:border-green-700 font-semibold text-green-800 dark:text-green-300">
-              <td className="pt-2">TOTAL</td>
+              <td className="pt-2">{t('cost.dxf_total')}</td>
               <td className="pt-2 text-right">
                 {result.total_perimeter_mm.toLocaleString(undefined, { maximumFractionDigits: 2 })} mm
                 <span className="block font-normal text-green-600 dark:text-green-500">
@@ -201,12 +205,9 @@ function DxfResultBox({ result }: { result: DxfResult }) {
       </div>
       {result.internal_cuts.length > 0 && (
         <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
-          {result.internal_cuts.length} internal cut{result.internal_cuts.length !== 1 ? 's' : ''} detected (holes/cutouts) — not included in total
+          {t('cost.dxf_internal_cuts', { count: result.internal_cuts.length })}
         </p>
       )}
-      <p className="text-xs text-green-500 dark:text-green-600 italic">
-        External perimeter only — internal holes and cutouts are excluded
-      </p>
     </div>
   )
 }
@@ -367,12 +368,12 @@ export default function CostPage() {
   function validate(): boolean {
     const e: typeof errors = {}
     if (inputMethod === 'DXF') {
-      if (!dxfResult || dxfResult.piece_count === 0) e.linear_meters = 'Upload a valid DXF file first'
+      if (!dxfResult || dxfResult.piece_count === 0) e.linear_meters = t('cost.dxf_upload_first')
     } else {
       const lm = Number(form.linear_meters)
-      if (!form.linear_meters || lm <= 0) e.linear_meters = 'Must be a positive number'
+      if (!form.linear_meters || lm <= 0) e.linear_meters = t('cost.linear_meters_invalid')
     }
-    if (!form.material_type) e.material_type = 'Select a material'
+    if (!form.material_type) e.material_type = t('cost.material_required')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -416,7 +417,7 @@ export default function CostPage() {
     onError: (err: any) => {
       const code = err?.response?.data?.error
       if (code === 'NO_COST_CONFIG') {
-        toast.error('Please set up your cost configuration first (Profile page)')
+        toast.error(t('cost.no_config_warning'))
       } else {
         toast.error(t('errors.generic'))
       }
@@ -426,7 +427,7 @@ export default function CostPage() {
   function handleCalculate() {
     if (!validate()) return
     if (!costConfig) {
-      toast.error('Please set up your cost configuration first (Profile page)')
+      toast.error(t('cost.no_config_warning'))
       return
     }
     calcMut.mutate()
@@ -470,12 +471,12 @@ export default function CostPage() {
         <div className="flex flex-col items-center justify-center mt-16 text-center px-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 max-w-md w-full space-y-4">
             <div className="text-6xl">🧮</div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">No Active Disc</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('cost.no_disc_title')}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              The cost calculator requires an active disc. Activate a disc first to use the cost calculator.
+              {t('cost.no_disc_body')}
             </p>
             <Link to="/activate">
-              <Button fullWidth>Activate a Disc</Button>
+              <Button fullWidth>{t('cost.activate_disc')}</Button>
             </Link>
           </div>
         </div>
@@ -488,7 +489,7 @@ export default function CostPage() {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto">
-          <CostResultCard result={result} discLabel={discLabel} onReset={handleReset} />
+          <CostResultCard result={result} discLabel={discLabel} multiplier={Number(form.multiplier) || 1.0} onReset={handleReset} />
         </div>
       </AppLayout>
     )
@@ -507,15 +508,15 @@ export default function CostPage() {
           {/* 1 — Disc selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Active Disc
+              {t('cost.active_disc')}
             </label>
             <select
-              title="Active Disc"
+              title={t('cost.active_disc')}
               value={form.activation_id}
               onChange={(e) => handleActivationChange(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             >
-              <option value="">— No disc selected —</option>
+              <option value="">{t('cost.no_disc_selected')}</option>
               {activations.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.label?.unique_code} · {a.machine?.name}
@@ -528,14 +529,14 @@ export default function CostPage() {
           {selectedActivation && availableMaterials.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Material
+                {t('cost.material')}
               </label>
               {availableMaterials.length === 1 ? (
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                     {MATERIAL_LABELS[availableMaterials[0]] ?? availableMaterials[0]}
                   </span>
-                  <span className="text-xs text-blue-400 dark:text-blue-500">auto-selected</span>
+                  <span className="text-xs text-blue-400 dark:text-blue-500">{t('cost.auto_selected')}</span>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -566,22 +567,22 @@ export default function CostPage() {
           {form.material_type && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Thickness
+                {t('cost.thickness_label')}
               </label>
               <div className="flex gap-2">
-                {thicknessOptions.map((t) => (
+                {thicknessOptions.map((thk) => (
                   <button
-                    key={t}
+                    key={thk}
                     type="button"
-                    onClick={() => setForm((f) => ({ ...f, thickness: String(t) }))}
+                    onClick={() => setForm((f) => ({ ...f, thickness: String(thk) }))}
                     className={[
                       'px-5 py-2 rounded-xl border-2 text-sm font-medium transition-all',
-                      Number(form.thickness) === t
+                      Number(form.thickness) === thk
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
                         : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
                     ].join(' ')}
                   >
-                    {t} cm
+                    {thk} cm
                   </button>
                 ))}
               </div>
@@ -596,11 +597,11 @@ export default function CostPage() {
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{catalog.rpm}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Feed rate</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('cost.feed_rate')}</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{previewFeed} mm/min</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Disc life</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('cost.disc_life')}</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{previewLife} m</p>
               </div>
             </div>
@@ -627,7 +628,7 @@ export default function CostPage() {
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
                   ].join(' ')}
                 >
-                  {m === 'DXF' ? '📐 Upload DXF' : '✏️ Manual Input'}
+                  {m === 'DXF' ? `📐 ${t('cost.upload_dxf_btn')}` : `✏️ ${t('cost.manual_input_btn')}`}
                 </button>
               ))}
             </div>
@@ -651,11 +652,11 @@ export default function CostPage() {
           ) : (
             <div className="space-y-2">
               <Input
-                label="Total Linear Meters (m)"
+                label={t('cost.linear_meters')}
                 type="number"
                 min="0"
                 step="0.001"
-                placeholder="e.g. 22.000"
+                placeholder={t('cost.linear_meters_placeholder')}
                 value={form.linear_meters}
                 onChange={(e) => {
                   setForm((f) => ({ ...f, linear_meters: e.target.value }))
@@ -670,7 +671,7 @@ export default function CostPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Input
-                label="Disc Price (€)"
+                label={t('cost.disc_price_label')}
                 type="number"
                 min="0"
                 step="0.01"
@@ -679,68 +680,80 @@ export default function CostPage() {
                 onChange={(e) => setForm((f) => ({ ...f, disc_price: e.target.value }))}
               />
               <Input
-                label="Material Price (€/m²)"
+                label={t('cost.material_price_label')}
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="0.00 (optional)"
+                placeholder={t('cost.material_price_placeholder')}
                 value={form.material_price_m2}
                 onChange={(e) => setForm((f) => ({ ...f, material_price_m2: e.target.value }))}
               />
             </div>
             <Input
-              label="Estimated Area (m²)"
+              label={t('cost.estimated_area')}
               type="number"
               min="0"
               step="0.01"
-              placeholder="e.g. 25.00 (optional)"
+              placeholder={t('cost.estimated_area_placeholder')}
               value={form.estimated_area}
               onChange={(e) => setForm((f) => ({ ...f, estimated_area: e.target.value }))}
             />
           </div>
 
-          {/* 8 — Advanced settings (collapsible) */}
+          {/* 8 — Price Multiplier */}
+          <Input
+            label={t('cost.price_multiplier')}
+            type="number"
+            min="1.0"
+            step="0.1"
+            placeholder={t('cost.multiplier_placeholder')}
+            value={form.multiplier}
+            onChange={(e) => setForm((f) => ({ ...f, multiplier: e.target.value }))}
+          />
+          <p className="text-xs text-gray-400 mt-1">{t('cost.multiplier_hint')}</p>
+
+          {/* 9 — Advanced settings (collapsible) */}
           <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
             <button
               type="button"
               onClick={() => setShowAdvanced((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
-              <span>Advanced Settings</span>
+              <span>{t('cost.advanced_settings')}</span>
               <span className="text-gray-400 text-xs">{showAdvanced ? '▲' : '▼'}</span>
             </button>
             {showAdvanced && (
               <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800 pt-3">
                 <p className="text-xs text-gray-400 dark:text-gray-500 italic">
-                  Pre-filled from your profile. Changes here only affect this calculation.
+                  {t('cost.advanced_hint')}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
-                    label="Machine Cost (€/h)"
+                    label={t('cost.machine_cost_hour')}
                     type="number" min="0" step="0.01"
                     value={form.machine_cost_hour}
                     onChange={(e) => setForm((f) => ({ ...f, machine_cost_hour: e.target.value }))}
                   />
                   <Input
-                    label="Labor Cost (€/h)"
+                    label={t('cost.labor_cost_hour')}
                     type="number" min="0" step="0.01"
                     value={form.labor_cost_hour}
                     onChange={(e) => setForm((f) => ({ ...f, labor_cost_hour: e.target.value }))}
                   />
                   <Input
-                    label="Energy Cost (€/kWh)"
+                    label={t('cost.energy_cost_kwh')}
                     type="number" min="0" step="0.0001"
                     value={form.energy_cost_kwh}
                     onChange={(e) => setForm((f) => ({ ...f, energy_cost_kwh: e.target.value }))}
                   />
                   <Input
-                    label="Downtime (%)"
+                    label={t('cost.downtime_pct')}
                     type="number" min="0" max="100" step="0.1"
                     value={form.downtime_pct}
                     onChange={(e) => setForm((f) => ({ ...f, downtime_pct: e.target.value }))}
                   />
                   <Input
-                    label="Waste (%)"
+                    label={t('cost.waste_pct')}
                     type="number" min="0" max="100" step="0.1"
                     value={form.waste_pct}
                     onChange={(e) => setForm((f) => ({ ...f, waste_pct: e.target.value }))}
@@ -752,7 +765,7 @@ export default function CostPage() {
 
           {!costConfig && (
             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-              ⚠️ No cost configuration found. Please set up your cost parameters in the Profile page before calculating.
+              ⚠️ {t('cost.no_config_warning')}
             </div>
           )}
 
@@ -770,7 +783,7 @@ export default function CostPage() {
         {history.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Recent Calculations
+              {t('cost.recent_calculations')}
             </h2>
             <div className="space-y-2">
               {history.map((calc) => (

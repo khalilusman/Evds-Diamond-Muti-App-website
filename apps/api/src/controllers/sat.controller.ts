@@ -37,7 +37,7 @@ export const uploadPhotos = upload.array('photos', 5)
 
 export async function createTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { activation_id, symptom_code, symptom_detail, rpm_reported, feed_reported, diameter_reported } = req.body
+    const { activation_id, symptom_code, symptom_detail, rpm_reported, feed_reported, diameter_reported, material_name, material_brand } = req.body
 
     if (!activation_id || !symptom_code) {
       res.status(400).json({ error: 'VALIDATION_ERROR', message: 'activation_id and symptom_code are required' })
@@ -102,6 +102,8 @@ export async function createTicket(req: Request, res: Response, next: NextFuncti
         rpm_reported: rpm_reported ? Number(rpm_reported) : null,
         feed_reported: feed_reported ? Number(feed_reported) : null,
         diameter_reported: diameter_reported ? Number(diameter_reported) : null,
+        material_name: material_name ?? null,
+        material_brand: material_brand ?? null,
         auto_diagnosis: diagnosis.auto_diagnosis,
         probable_cause: diagnosis.probable_cause,
         recommended_fix: diagnosis.recommended_fix,
@@ -193,7 +195,7 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       return
     }
 
-    const [lastLog, reporter] = await Promise.all([
+    const [lastLog, reporter, resolver] = await Promise.all([
       prisma.usageLog.findFirst({
         where: { activation_id: ticket.activation_id },
         orderBy: { logged_at: 'desc' },
@@ -201,6 +203,9 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       }),
       ticket.reported_by
         ? prisma.user.findUnique({ where: { id: ticket.reported_by }, select: { name: true, email: true } })
+        : null,
+      ticket.resolved_by
+        ? prisma.user.findUnique({ where: { id: ticket.resolved_by }, select: { id: true, name: true, email: true } })
         : null,
     ])
 
@@ -219,6 +224,7 @@ export async function getTicket(req: Request, res: Response, next: NextFunction)
       data: {
         ...ticket,
         reporter,
+        resolver,
         catalog_params: catalogParams,
         comparison: catalogParams ? {
           rpm: { reported: ticket.rpm_reported, recommended: catalogParams.rpm },

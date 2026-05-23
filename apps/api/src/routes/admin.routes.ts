@@ -92,4 +92,61 @@ router.patch('/evds-staff/:id', async (req: Request, res: Response, next: NextFu
   }
 })
 
+// PATCH /api/admin/evds-staff/:id/reactivate — reactivate a staff member
+router.patch('/evds-staff/:id/reactivate', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (req.params.id === req.user!.userId) {
+      res.status(400).json({ error: 'FORBIDDEN', message: 'You cannot reactivate yourself' })
+      return
+    }
+
+    const target = await prisma.user.findUnique({ where: { id: String(req.params.id) } })
+    if (!target || !['EVDS_ADMIN', 'EVDS_SUPPORT'].includes(target.role)) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'Staff member not found' })
+      return
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: String(req.params.id) },
+      data: { is_active: true },
+      select: { id: true, name: true, email: true, role: true, is_active: true, created_at: true },
+    })
+
+    res.json({ data: updated })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// DELETE /api/admin/evds-staff/:id — permanently delete a staff member (blocked if records exist)
+router.delete('/evds-staff/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (req.params.id === req.user!.userId) {
+      res.status(400).json({ error: 'FORBIDDEN', message: 'You cannot delete yourself' })
+      return
+    }
+
+    const target = await prisma.user.findUnique({ where: { id: String(req.params.id) } })
+    if (!target || !['EVDS_ADMIN', 'EVDS_SUPPORT'].includes(target.role)) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'Staff member not found' })
+      return
+    }
+
+    const [satCount, activationCount] = await Promise.all([
+      prisma.satTicket.count({ where: { OR: [{ reported_by: String(req.params.id) }, { resolved_by: String(req.params.id) }] } }),
+      prisma.discActivation.count({ where: { user_id: String(req.params.id) } }),
+    ])
+
+    if (satCount > 0 || activationCount > 0) {
+      res.status(400).json({ error: 'HAS_RECORDS', message: 'Cannot delete user with existing records. Deactivate instead.' })
+      return
+    }
+
+    await prisma.user.delete({ where: { id: String(req.params.id) } })
+    res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router

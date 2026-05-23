@@ -5,6 +5,7 @@ import { CostResult } from '../api/cost.api'
 interface CostResultCardProps {
   result: CostResult
   discLabel?: string
+  multiplier?: number
   onReset: () => void
 }
 
@@ -42,9 +43,14 @@ function handlePrint() {
   }, { once: true })
 }
 
-export default function CostResultCard({ result, discLabel, onReset }: CostResultCardProps) {
+export default function CostResultCard({ result, discLabel, multiplier = 1, onReset }: CostResultCardProps) {
   const { t } = useTranslation()
   const now = new Date()
+
+  const showSellingPrice = multiplier > 1.0
+  const sellingPrice = result.total * multiplier
+  const profit = sellingPrice - result.total
+  const marginPct = Math.round((profit / sellingPrice) * 100)
 
   return (
     <div id="cost-print-section" className="space-y-5">
@@ -125,6 +131,30 @@ export default function CostResultCard({ result, discLabel, onReset }: CostResul
           </tbody>
         </table>
       </div>
+
+      {/* Selling Price Estimate */}
+      {showSellingPrice && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-4">
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mb-3">
+            Selling Price Estimate
+          </p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between print:hidden">
+              <span className="text-gray-500 dark:text-gray-400">Multiplier</span>
+              <span className="font-medium text-gray-900 dark:text-white">×{multiplier.toFixed(1)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400 print:hidden">Selling Price</span>
+              <span className="hidden print:block text-gray-500">Total to Customer</span>
+              <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">€{fmt(sellingPrice)}</span>
+            </div>
+            <div className="flex justify-between border-t border-emerald-200 dark:border-emerald-700 pt-2 print:hidden">
+              <span className="text-gray-500 dark:text-gray-400">Profit Margin</span>
+              <span className="font-medium text-gray-900 dark:text-white">€{fmt(profit)} ({marginPct}%)</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Operating parameters */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-4">

@@ -10,6 +10,8 @@ export interface SatTicket {
   rpm_reported?: number | null
   feed_reported?: number | null
   diameter_reported?: number | null
+  material_name?: string | null
+  material_brand?: string | null
   auto_diagnosis: string
   probable_cause: string
   recommended_fix: string
@@ -45,6 +47,8 @@ export interface CreateSatTicketData {
   rpm_reported?: number | null
   feed_reported?: number | null
   diameter_reported?: number | null
+  material_name?: string
+  material_brand?: string
 }
 
 export const createSatTicket = async (data: CreateSatTicketData): Promise<SatTicket> => {

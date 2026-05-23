@@ -80,3 +80,15 @@ export const getPerformance = async (): Promise<PerformanceData> => {
   const { data } = await api.get('/api/analytics/performance')
   return data.data
 }
+
+export interface SatBreakdownPoint {
+  material_type: string
+  thickness: number
+  count: number
+  percentage: number
+}
+
+export const getSatBreakdown = async (): Promise<SatBreakdownPoint[]> => {
+  const { data } = await api.get('/api/analytics/sat-breakdown')
+  return data.data
+}

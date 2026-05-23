@@ -14,6 +14,7 @@ import {
   getGeography,
   getWearAlerts,
   getPerformance,
+  getSatBreakdown,
 } from '../../api/analytics.api'
 
 const MATERIAL_COLORS: Record<string, string> = {
@@ -57,6 +58,7 @@ export default function AnalyticsPage() {
   const geoQ     = useQuery({ queryKey: ['analytics-geography'], queryFn: getGeography, staleTime: 60_000 })
   const wearQ    = useQuery({ queryKey: ['analytics-wear-alerts'], queryFn: getWearAlerts, staleTime: 60_000 })
   const perfQ    = useQuery({ queryKey: ['analytics-performance'], queryFn: getPerformance, staleTime: 60_000 })
+  const satBdQ   = useQuery({ queryKey: ['analytics-sat-breakdown'], queryFn: getSatBreakdown, staleTime: 60_000 })
 
   const s = summaryQ.data
   const weekly = weeklyQ.data ?? []
@@ -282,6 +284,53 @@ export default function AnalyticsPage() {
                       </tr>
                     ))}
                   </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Incidents by Material & Thickness */}
+          <SectionCard title={t('analytics.sat_breakdown')}>
+            {satBdQ.isLoading ? (
+              <div className="flex justify-center py-8"><LoadingSpinner size="md" className="text-blue-500" /></div>
+            ) : !satBdQ.data || satBdQ.data.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">{t('analytics.no_sat_data')}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    <tr>
+                      <th className="text-left py-2">{t('analytics.col_material')}</th>
+                      <th className="text-right py-2">{t('analytics.col_thickness')}</th>
+                      <th className="text-right py-2">{t('analytics.col_incidents')}</th>
+                      <th className="text-right py-2">{t('analytics.col_pct_total')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {satBdQ.data.map((row, i) => (
+                      <tr key={i}>
+                        <td className="py-2 font-medium text-gray-800 dark:text-gray-200 capitalize">
+                          {row.material_type.replace(/_/g, ' ')}
+                        </td>
+                        <td className="py-2 text-right text-gray-600 dark:text-gray-400">
+                          {row.thickness.toFixed(1)} cm
+                        </td>
+                        <td className="py-2 text-right font-semibold text-gray-900 dark:text-white">
+                          {row.count}
+                        </td>
+                        <td className="py-2 text-right text-gray-500 dark:text-gray-400">
+                          {row.percentage}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300">
+                      <td className="pt-2" colSpan={2}>{t('analytics.col_total')}</td>
+                      <td className="pt-2 text-right">{satBdQ.data.reduce((s, r) => s + r.count, 0)}</td>
+                      <td className="pt-2 text-right">100%</td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             )}

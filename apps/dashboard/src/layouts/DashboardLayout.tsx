@@ -3,13 +3,14 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import Logo from '../components/Logo'
+import { CompanyIcon, SATIncidentIcon, DiamondDiscIcon } from '../components/icons/EvdsIcons'
 import ThemeToggle from '../components/ThemeToggle'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import useAuthStore from '../stores/auth.store'
 import { getAnalyticsSummary } from '../api/analytics.api'
 
 interface NavItem {
-  icon: string
+  icon: ReactNode
   labelKey: string
   path: string
   adminOnly?: boolean
@@ -17,11 +18,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { icon: '🏠', labelKey: 'nav.dashboard',       path: '/' },
-  { icon: '🏢', labelKey: 'nav.companies',        path: '/companies' },
-  { icon: '💿', labelKey: 'nav.disc_monitoring',  path: '/discs' },
+  { icon: <CompanyIcon size={22} stroke="currentColor" />, labelKey: 'nav.companies', path: '/companies' },
+  { icon: <DiamondDiscIcon size={22} stroke="currentColor" />, labelKey: 'nav.disc_monitoring', path: '/discs' },
   { icon: '🏷️', labelKey: 'nav.labels',           path: '/labels' },
   { icon: '🔒', labelKey: 'nav.security',         path: '/security' },
-  { icon: '🔧', labelKey: 'nav.sat',              path: '/sat' },
+  { icon: <SATIncidentIcon size={22} stroke="currentColor" />, labelKey: 'nav.sat', path: '/sat' },
   { icon: '📊', labelKey: 'nav.analytics',        path: '/analytics' },
   { icon: '👤', labelKey: 'nav.staff',            path: '/staff', adminOnly: true },
   { icon: '📱', labelKey: 'nav.qr',               path: '/qr',   adminOnly: true },

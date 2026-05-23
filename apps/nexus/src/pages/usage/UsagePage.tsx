@@ -19,6 +19,7 @@ const CUT_TYPES = [
 
 interface FormState {
   activation_id: string
+  thickness: string
   current_diameter: string
   meters_cut: string
   rpm_used: string
@@ -30,6 +31,7 @@ interface FormState {
 
 const defaultForm = (): FormState => ({
   activation_id: '',
+  thickness: '2.0',
   current_diameter: '',
   meters_cut: '',
   rpm_used: '',
@@ -81,10 +83,12 @@ export default function UsagePage() {
     enabled: !!selectedActivation,
   })
   const catalog = catalogList[0]
-  const useT2 = catalog && selectedActivation
-    ? Math.abs(Number(catalog.thickness_t2) - (selectedActivation.thickness ?? 2.0)) < 0.01
+  const selectedThickness = Number(form.thickness) || 2.0
+  const useT2 = catalog
+    ? Math.abs(Number(catalog.thickness_t2) - selectedThickness) < 0.01
     : false
   const recommendedFeed = catalog ? (useT2 ? catalog.feed_t2 : catalog.feed_t1) : null
+  const recommendedLife = catalog ? (useT2 ? catalog.life_t2 : catalog.life_t1) : null
   const recommendedRpm = catalog?.rpm ?? null
 
   // Pre-select from URL param
@@ -117,7 +121,7 @@ export default function UsagePage() {
         activation_id: form.activation_id,
         current_diameter: parseFloat(form.current_diameter),
         meters_cut: parseFloat(form.meters_cut),
-        thickness: selectedActivation?.thickness ?? 2.0,
+        thickness: Number(form.thickness) || 2.0,
         material_type: selectedActivation?.material_type ?? 'unknown',
         rpm_used: form.rpm_used ? parseInt(form.rpm_used, 10) : null,
         feed_used: form.feed_used ? parseInt(form.feed_used, 10) : null,
@@ -248,6 +252,52 @@ export default function UsagePage() {
                   <p className="mt-1 text-sm text-red-500">{errors.activation_id as string}</p>
                 )}
               </div>
+
+              {/* Thickness selector */}
+              {selectedActivation && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Thickness (cm)
+                  </label>
+                  <div className="flex gap-2">
+                    {[1.2, 2.0, 3.0].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setField('thickness', String(t))}
+                        className={[
+                          'px-5 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                          selectedThickness === t
+                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
+                        ].join(' ')}
+                      >
+                        {t} cm
+                      </button>
+                    ))}
+                  </div>
+                  {catalog && (
+                    <div className="mt-2 grid grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">RPM</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{recommendedRpm ?? '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Feed</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {recommendedFeed != null ? `${recommendedFeed} mm/min` : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Life</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {recommendedLife != null ? `${recommendedLife} m` : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Current diameter */}
               <div>

@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
 import path from 'path'
-import fs from 'fs'
 import PDFDocument from 'pdfkit'
 import QRCode from 'qrcode'
 import { prisma } from '../lib/prisma'
@@ -10,7 +9,7 @@ import { generateUniqueCodes, FAMILY_ABBREVIATIONS } from '../services/label.ser
 const MM = 2.8346  // points per mm
 const LABEL_W = 105 * MM
 const LABEL_H = 70 * MM
-const LOGO_PATH = path.join(process.cwd(), '..', '..', 'assets', 'evds-logo.png')
+const LOGO_PATH = path.join(__dirname, '../../uploads/static/evds-logo.png')
 const LABEL_GAP = 2 * MM
 
 const MATERIAL_DISPLAY: Record<string, string> = {
@@ -155,14 +154,13 @@ export async function listLots(req: Request, res: Response, next: NextFunction):
       const sc = statusMap[key] ?? {}
       return {
         lot_number: r.lot_number,
+        family_id: r.family_id,
         family_name: familyMap[r.family_id] ?? r.family_id,
         nominal_diameter: r.nominal_diameter,
         total: r._count.id,
         unused: sc['UNUSED'] ?? 0,
-        active: sc['ACTIVE'] ?? 0,
+        used: (sc['ACTIVE'] ?? 0) + (sc['EXPIRED_W1'] ?? 0) + (sc['ACTIVE_W2'] ?? 0) + (sc['PERMANENTLY_DEACTIVATED'] ?? 0),
         expired_w1: sc['EXPIRED_W1'] ?? 0,
-        active_w2: sc['ACTIVE_W2'] ?? 0,
-        permanently_deactivated: sc['PERMANENTLY_DEACTIVATED'] ?? 0,
         voided: sc['VOIDED'] ?? 0,
       }
     })
@@ -370,7 +368,6 @@ async function drawLabel(
   lbX:        number,
   lbY:        number,
   materials:  string[],
-  logoExists: boolean,
 ): Promise<void> {
   const accentW = Math.round(3 * MM)
   const padX    = Math.round(2 * MM)
@@ -386,11 +383,11 @@ async function drawLabel(
   let cy = lbY + padY
 
   // ── SECTION 1: header ─────────────────────────────────────────────────────
-  if (logoExists) {
-    doc.image(LOGO_PATH, lx, cy, { height: 12, fit: [65, 12] })
-  } else {
+  try {
+    doc.image(LOGO_PATH, lx, cy, { height: 12, fit: [68, 12] })
+  } catch {
     doc.font('Helvetica-Bold').fontSize(8).fillColor('#1e3a8a')
-      .text('EVDS', lx, cy + 2, { lineBreak: false })
+      .text('EVDS Diamond', lx, cy + 2, { lineBreak: false })
   }
   doc.font('Helvetica-Bold').fontSize(7).fillColor('#1e3a8a')
     .text('DIAMOND TOOL ID', lx, cy + 2, { width: cw, align: 'right', lineBreak: false })
@@ -515,7 +512,6 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
     res.setHeader('Content-Disposition', `attachment; filename="labels-${lot_number}.pdf"`)
     doc.pipe(res)
 
-    const logoExists = fs.existsSync(LOGO_PATH)
     const COLS     = 2
     const ROWS     = 4
     const PER_PAGE = COLS * ROWS
@@ -528,7 +524,7 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
       const row = Math.floor(pos / COLS)
       const x   = col * LABEL_W
       const y   = marginTop + row * (LABEL_H + LABEL_GAP)
-      await drawLabel(doc, labels[i], x, y, materials, logoExists)
+      await drawLabel(doc, labels[i], x, y, materials)
     }
 
     doc.end()

@@ -12,7 +12,7 @@ type WearFilter = 'All' | 'OK' | 'Warning' | 'Critical' | 'Expired'
 
 const WEAR_TABS: WearFilter[] = ['All', 'OK', 'Warning', 'Critical', 'Expired']
 
-const EXPIRED_STATUSES = new Set(['EXPIRED_W1', 'PERMANENTLY_DEACTIVATED', 'REPLACED'])
+const EXPIRED_STATUSES = new Set(['EXPIRED', 'REPLACED'])
 
 function wearCategory(pct: number | null | undefined, status: string): WearFilter {
   if (EXPIRED_STATUSES.has(status)) return 'Expired'

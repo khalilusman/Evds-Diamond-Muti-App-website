@@ -266,7 +266,17 @@ function TicketPanel({ ticketId, onClose }: { ticketId: string; onClose: () => v
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('sat.evds_solution')}</p>
 
               {ticket.status === 'RESOLVED' && ticket.evds_solution ? (
-                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.evds_solution}</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.evds_solution}</p>
+                  <div className="border-t border-green-200 dark:border-green-700 pt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    {ticket.resolver && (
+                      <p><span className="font-medium text-gray-700 dark:text-gray-300">Resolved by:</span> {ticket.resolver.name}</p>
+                    )}
+                    {ticket.resolved_at && (
+                      <p><span className="font-medium text-gray-700 dark:text-gray-300">Resolved at:</span> {new Date(ticket.resolved_at).toLocaleString()}</p>
+                    )}
+                  </div>
+                </div>
               ) : ticket.status === 'ESCALATED' ? (
                 <p className="text-sm text-amber-700 dark:text-amber-400 whitespace-pre-wrap">
                   {ticket.evds_solution ?? t('sat.escalated_default')}

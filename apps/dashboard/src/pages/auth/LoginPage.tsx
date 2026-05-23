@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import AuthLayout from '../../layouts/AuthLayout'
 import Input from '../../components/Input'
 import Button from '../../components/Button'
+import ThemeToggle from '../../components/ThemeToggle'
 import useAuthStore from '../../stores/auth.store'
 import { login } from '../../api/auth.api'
 import { ALLOWED_ROLES } from '../../stores/auth.store'
@@ -40,9 +41,13 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-white">EVDS Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-1">Internal Operations Portal</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">EVDS Dashboard</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Internal Operations Portal</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -64,7 +69,7 @@ export default function LoginPage() {
         />
 
         {error && (
-          <div className="p-3 bg-red-900/30 border border-red-700/50 rounded-xl text-sm text-red-400">
+          <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 rounded-xl text-sm text-red-600 dark:text-red-400">
             {error}
           </div>
         )}

@@ -11,6 +11,7 @@ import { updateMyEmail, updateMyPassword } from '../../api/auth.api'
 export default function ProfilePage() {
   const { t } = useTranslation()
   const { user, setAuth, token } = useAuthStore()
+  const isSupport = user?.role === 'EVDS_SUPPORT'
 
   const [newEmail, setNewEmail] = useState('')
   const [emailError, setEmailError] = useState('')
@@ -82,70 +83,75 @@ export default function ProfilePage() {
           </span>
         </div>
 
-        {/* Update Email */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('profile.update_email')}</h2>
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <Input
-              label={t('profile.current_email')}
-              value={user?.email ?? ''}
-              readOnly
-              className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60"
-            />
-            <Input
-              label={t('profile.new_email')}
-              type="email"
-              placeholder={t('profile.new_email_placeholder')}
-              value={newEmail}
-              onChange={(e) => { setNewEmail(e.target.value); setEmailError('') }}
-              error={emailError}
-            />
-            <Button
-              type="submit"
-              loading={emailMut.isPending}
-              disabled={!newEmail}
-            >
-              {t('profile.update_email_btn')}
-            </Button>
-          </form>
-        </div>
+        {/* Credentials — hidden for EVDS_SUPPORT */}
+        {isSupport ? (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-5 text-sm text-amber-800 dark:text-amber-300">
+            Contact EVDS Admin to update your credentials.
+          </div>
+        ) : (
+          <>
+            {/* Update Email */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('profile.update_email')}</h2>
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <Input
+                  label={t('profile.current_email')}
+                  value={user?.email ?? ''}
+                  readOnly
+                  className="bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60"
+                />
+                <Input
+                  label={t('profile.new_email')}
+                  type="email"
+                  placeholder={t('profile.new_email_placeholder')}
+                  value={newEmail}
+                  onChange={(e) => { setNewEmail(e.target.value); setEmailError('') }}
+                  error={emailError}
+                />
+                <Button type="submit" loading={emailMut.isPending} disabled={!newEmail}>
+                  {t('profile.update_email_btn')}
+                </Button>
+              </form>
+            </div>
 
-        {/* Change Password */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('profile.change_password')}</h2>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <Input
-              label={t('profile.current_password')}
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError('') }}
-            />
-            <Input
-              label={t('profile.new_password')}
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={(e) => { setNewPassword(e.target.value); setPasswordError('') }}
-              hint={t('profile.password_hint')}
-            />
-            <Input
-              label={t('profile.confirm_new_password')}
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError('') }}
-              error={passwordError}
-            />
-            <Button
-              type="submit"
-              loading={passwordMut.isPending}
-              disabled={!currentPassword || !newPassword || !confirmPassword}
-            >
-              {t('profile.change_password_btn')}
-            </Button>
-          </form>
-        </div>
+            {/* Change Password */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-5">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">{t('profile.change_password')}</h2>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <Input
+                  label={t('profile.current_password')}
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError('') }}
+                />
+                <Input
+                  label={t('profile.new_password')}
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setPasswordError('') }}
+                  hint={t('profile.password_hint')}
+                />
+                <Input
+                  label={t('profile.confirm_new_password')}
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError('') }}
+                  error={passwordError}
+                />
+                <Button
+                  type="submit"
+                  loading={passwordMut.isPending}
+                  disabled={!currentPassword || !newPassword || !confirmPassword}
+                >
+                  {t('profile.change_password_btn')}
+                </Button>
+              </form>
+            </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   )

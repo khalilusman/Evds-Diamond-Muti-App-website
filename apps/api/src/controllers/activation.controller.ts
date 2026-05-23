@@ -17,8 +17,8 @@ export async function createActivation(req: Request, res: Response, next: NextFu
     const material_type = req.body.material_type ?? req.body.material_group
     const thickness = req.body.thickness ?? req.body.thickness_cm
 
-    if (!unique_code || !machine_id || !diameter_at_activation || !thickness || !material_type) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'unique_code, machine_id, diameter_at_activation, thickness, material_type are required' })
+    if (!unique_code || !machine_id || !diameter_at_activation || !material_type) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'unique_code, machine_id, diameter_at_activation, material_type are required' })
       return
     }
 
@@ -72,7 +72,7 @@ export async function createActivation(req: Request, res: Response, next: NextFu
       return
     }
 
-    const thick = Number(thickness)
+    const thick = thickness != null ? Number(thickness) : 2.0
     const VALID_THICKNESSES = [1.2, 2.0, 3.0]
     if (!VALID_THICKNESSES.some((t) => Math.abs(t - thick) < 0.01)) {
       res.status(400).json({ error: 'VALIDATION_ERROR', message: 'thickness must be 1.2, 2.0, or 3.0' })

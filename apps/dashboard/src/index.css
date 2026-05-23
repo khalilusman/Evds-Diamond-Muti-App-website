@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(107 114 128); /* gray-500 */
+  opacity: 1;
+}

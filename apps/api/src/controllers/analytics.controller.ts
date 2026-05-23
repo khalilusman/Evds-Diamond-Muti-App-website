@@ -198,6 +198,33 @@ export async function geography(_req: Request, res: Response, next: NextFunction
   }
 }
 
+// GET /api/analytics/sat-breakdown
+export async function satBreakdown(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const rows = await prisma.$queryRaw<{ material_type: string; thickness: number; count: number }[]>`
+      SELECT
+        da.material_type,
+        da.thickness::float AS thickness,
+        COUNT(st.id)::int   AS count
+      FROM sat_tickets st
+      JOIN disc_activations da ON da.id = st.activation_id
+      WHERE da.material_type IS NOT NULL
+      GROUP BY da.material_type, da.thickness
+      ORDER BY count DESC
+    `
+    const total = rows.reduce((s, r) => s + Number(r.count), 0)
+    const data = rows.map((r) => ({
+      material_type: r.material_type,
+      thickness:     Number(r.thickness),
+      count:         Number(r.count),
+      percentage:    total > 0 ? Math.round((Number(r.count) / total) * 100) : 0,
+    }))
+    res.json({ data, total })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // GET /api/analytics/performance
 export async function performance(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

@@ -213,7 +213,7 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
   async function handlePdf() {
     setPdfLoading(true)
     try {
-      await exportPdf(lot.lot_number)
+      await exportPdf(lot.lot_number, lot.family_id, lot.nominal_diameter)
     } catch {
       toast.error(t('labels.pdf_error'))
     } finally {
@@ -243,9 +243,8 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{lot.nominal_diameter}mm</td>
         <td className="px-5 py-3 text-sm font-semibold text-gray-900 dark:text-white">{lot.total}</td>
         <td className="px-5 py-3"><LotBadge count={lot.unused} color="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" /></td>
-        <td className="px-5 py-3"><LotBadge count={lot.active} color="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" /></td>
+        <td className="px-5 py-3"><LotBadge count={lot.used} color="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" /></td>
         <td className="px-5 py-3"><LotBadge count={lot.expired_w1} color="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" /></td>
-        <td className="px-5 py-3"><LotBadge count={lot.permanently_used} color="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" /></td>
         <td className="px-5 py-3"><LotBadge count={lot.voided} color="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" /></td>
         <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500">
           {new Date(lot.generated_at).toLocaleDateString()}
@@ -546,9 +545,8 @@ export default function LabelsPage() {
                     <th className="text-left px-5 py-3">Ø</th>
                     <th className="text-left px-5 py-3">{t('labels.col_total')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_unused')}</th>
-                    <th className="text-left px-5 py-3">{t('labels.col_active')}</th>
+                    <th className="text-left px-5 py-3">Active / Used</th>
                     <th className="text-left px-5 py-3">{t('labels.col_exp_w1')}</th>
-                    <th className="text-left px-5 py-3">{t('labels.col_perm_used')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_voided')}</th>
                     <th className="text-left px-5 py-3">{t('labels.generated_at')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_actions')}</th>

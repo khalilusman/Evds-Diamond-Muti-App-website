@@ -35,6 +35,14 @@ const deactivateStaff = async (id: string): Promise<void> => {
   await api.patch(`/api/admin/evds-staff/${id}`)
 }
 
+const reactivateStaff = async (id: string): Promise<void> => {
+  await api.patch(`/api/admin/evds-staff/${id}/reactivate`)
+}
+
+const deleteStaff = async (id: string): Promise<void> => {
+  await api.delete(`/api/admin/evds-staff/${id}`)
+}
+
 interface AddModalProps {
   onClose: () => void
   onDone: () => void
@@ -105,6 +113,8 @@ export default function StaffPage() {
   const qc = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [deactivateTarget, setDeactivateTarget] = useState<StaffMember | null>(null)
+  const [reactivateTarget, setReactivateTarget] = useState<StaffMember | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null)
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ['evds-staff'],
@@ -121,6 +131,30 @@ export default function StaffPage() {
     onError: (err: any) => {
       const msg = err?.response?.data?.message ?? t('staff.deactivate_error')
       toast.error(msg)
+    },
+  })
+
+  const reactivateMut = useMutation({
+    mutationFn: (id: string) => reactivateStaff(id),
+    onSuccess: () => {
+      toast.success('Staff member reactivated')
+      setReactivateTarget(null)
+      qc.invalidateQueries({ queryKey: ['evds-staff'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to reactivate staff member')
+    },
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteStaff(id),
+    onSuccess: () => {
+      toast.success('Staff member permanently deleted')
+      setDeleteTarget(null)
+      qc.invalidateQueries({ queryKey: ['evds-staff'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to delete staff member')
     },
   })
 
@@ -159,6 +193,43 @@ export default function StaffPage() {
               <Button variant="ghost" fullWidth onClick={() => setDeactivateTarget(null)} disabled={deactivateMut.isPending}>{t('common.cancel')}</Button>
               <Button variant="danger" fullWidth loading={deactivateMut.isPending} onClick={() => deactivateMut.mutate(deactivateTarget.id)}>
                 {t('staff.deactivate')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reactivateTarget && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Reactivate {reactivateTarget.name}?</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This will restore their access. They will be able to log in again.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="ghost" fullWidth onClick={() => setReactivateTarget(null)} disabled={reactivateMut.isPending}>{t('common.cancel')}</Button>
+              <Button fullWidth loading={reactivateMut.isPending} onClick={() => reactivateMut.mutate(reactivateTarget.id)}>
+                Reactivate
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Permanently delete {deleteTarget.name}?</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This will permanently delete this user. Their email can be reused for a new account.
+            </p>
+            <p className="text-xs text-red-500 dark:text-red-400 font-medium">
+              This action cannot be undone. If the user has existing records, deletion will be blocked — deactivate instead.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="ghost" fullWidth onClick={() => setDeleteTarget(null)} disabled={deleteMut.isPending}>{t('common.cancel')}</Button>
+              <Button variant="danger" fullWidth loading={deleteMut.isPending} onClick={() => deleteMut.mutate(deleteTarget.id)}>
+                Delete Permanently
               </Button>
             </div>
           </div>
@@ -224,11 +295,23 @@ export default function StaffPage() {
                       {new Date(s.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      {s.is_active && s.id !== user?.id && (
-                        <Button variant="danger" size="sm" onClick={() => setDeactivateTarget(s)}>
-                          {t('staff.deactivate')}
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        {s.is_active && s.id !== user?.id && (
+                          <Button variant="danger" size="sm" onClick={() => setDeactivateTarget(s)}>
+                            {t('staff.deactivate')}
+                          </Button>
+                        )}
+                        {!s.is_active && (
+                          <Button variant="secondary" size="sm" onClick={() => setReactivateTarget(s)}>
+                            Reactivate
+                          </Button>
+                        )}
+                        {s.id !== user?.id && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(s)}>
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
