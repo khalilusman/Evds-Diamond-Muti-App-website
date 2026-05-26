@@ -29,8 +29,8 @@ export async function generateLabels(req: Request, res: Response, next: NextFunc
       res.status(400).json({ error: 'VALIDATION_ERROR', message: 'lot_number, family_id, nominal_diameter, quantity are required' })
       return
     }
-    if (!/^[A-Z]?\d{8}$/.test(lot_number)) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'lot_number must match format: optional letter + 8 digits (e.g. 20261231)' })
+    if (!/^[A-Z0-9-]{3,20}$/i.test(lot_number)) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'lot_number must be 3–20 characters (letters, numbers, hyphens; no spaces)' })
       return
     }
 
@@ -384,7 +384,7 @@ async function drawLabel(
 
   // ── SECTION 1: header ─────────────────────────────────────────────────────
   try {
-    doc.image(LOGO_PATH, lx, cy, { height: 12, fit: [68, 12] })
+    doc.image(LOGO_PATH, lx, cy - 4, { width: 42 })
   } catch {
     doc.font('Helvetica-Bold').fontSize(8).fillColor('#1e3a8a')
       .text('EVDS Diamond', lx, cy + 2, { lineBreak: false })

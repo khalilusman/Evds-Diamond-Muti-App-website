@@ -15,6 +15,8 @@ import {
   getWearAlerts,
   getPerformance,
   getSatBreakdown,
+  getSpeedByMaterial,
+  SpeedByMaterialPoint,
 } from '../../api/analytics.api'
 
 const MATERIAL_COLORS: Record<string, string> = {
@@ -48,9 +50,13 @@ function KpiPill({ label, value }: { label: string; value: string | number }) {
 
 const gridStroke = 'var(--grid-stroke)'
 
+type SortCol = keyof SpeedByMaterialPoint
+type SortDir = 'asc' | 'desc'
+
 export default function AnalyticsPage() {
   const { t } = useTranslation()
   const [weeks, setWeeks] = useState<WeekOption>(12)
+  const [speedSort, setSpeedSort] = useState<{ col: SortCol; dir: SortDir }>({ col: 'material_type', dir: 'asc' })
 
   const summaryQ = useQuery({ queryKey: ['analytics-summary'], queryFn: getAnalyticsSummary, staleTime: 30_000 })
   const weeklyQ  = useQuery({ queryKey: ['analytics-weekly', weeks], queryFn: () => getWeekly(weeks), staleTime: 60_000 })
@@ -59,6 +65,7 @@ export default function AnalyticsPage() {
   const wearQ    = useQuery({ queryKey: ['analytics-wear-alerts'], queryFn: getWearAlerts, staleTime: 60_000 })
   const perfQ    = useQuery({ queryKey: ['analytics-performance'], queryFn: getPerformance, staleTime: 60_000 })
   const satBdQ   = useQuery({ queryKey: ['analytics-sat-breakdown'], queryFn: getSatBreakdown, staleTime: 60_000 })
+  const speedQ   = useQuery({ queryKey: ['analytics-speed-by-material'], queryFn: getSpeedByMaterial, staleTime: 60_000 })
 
   const s = summaryQ.data
   const weekly = weeklyQ.data ?? []
@@ -334,6 +341,71 @@ export default function AnalyticsPage() {
                 </table>
               </div>
             )}
+          </SectionCard>
+
+          {/* Speed by Material & Thickness */}
+          <SectionCard title={t('analytics.speed_by_material')}>
+            {speedQ.isLoading ? (
+              <div className="flex justify-center py-8"><LoadingSpinner size="md" className="text-blue-500" /></div>
+            ) : !speedQ.data || speedQ.data.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">{t('analytics.no_data')}</p>
+            ) : (() => {
+              const sorted = [...speedQ.data].sort((a, b) => {
+                const av = a[speedSort.col], bv = b[speedSort.col]
+                if (typeof av === 'string' && typeof bv === 'string')
+                  return speedSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+                return speedSort.dir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number)
+              })
+              function thClick(col: SortCol) {
+                setSpeedSort((s) => ({ col, dir: s.col === col && s.dir === 'asc' ? 'desc' : 'asc' }))
+              }
+              function sortIcon(col: SortCol) {
+                if (speedSort.col !== col) return <span className="text-gray-300 dark:text-gray-600 ml-1">↕</span>
+                return <span className="text-blue-500 ml-1">{speedSort.dir === 'asc' ? '↑' : '↓'}</span>
+              }
+              return (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      <tr>
+                        {(
+                          [
+                            ['material_type', t('analytics.col_material')],
+                            ['thickness',     t('analytics.col_thickness')],
+                            ['avg_feed',      t('analytics.col_avg_speed')],
+                            ['avg_rpm',       t('analytics.col_avg_rpm')],
+                            ['total_sessions', t('analytics.col_sessions')],
+                            ['total_metres',  t('analytics.col_total_metres')],
+                          ] as [SortCol, string][]
+                        ).map(([col, label]) => (
+                          <th
+                            key={col}
+                            className="text-left py-2 cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200"
+                            onClick={() => thClick(col)}
+                          >
+                            {label}{sortIcon(col)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {sorted.map((row, i) => (
+                        <tr key={i}>
+                          <td className="py-2 font-medium text-gray-800 dark:text-gray-200 capitalize">
+                            {row.material_type.replace(/_/g, ' ')}
+                          </td>
+                          <td className="py-2 text-gray-600 dark:text-gray-400">{row.thickness.toFixed(1)} cm</td>
+                          <td className="py-2 font-semibold text-gray-900 dark:text-white">{row.avg_feed.toLocaleString()} mm/min</td>
+                          <td className="py-2 text-gray-600 dark:text-gray-400">{row.avg_rpm.toLocaleString()}</td>
+                          <td className="py-2 text-gray-600 dark:text-gray-400">{row.total_sessions}</td>
+                          <td className="py-2 text-gray-600 dark:text-gray-400">{row.total_metres.toLocaleString()} m</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })()}
           </SectionCard>
 
         </div>

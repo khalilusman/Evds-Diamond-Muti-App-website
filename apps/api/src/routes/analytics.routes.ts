@@ -15,5 +15,6 @@ router.get('/wear-alerts', ctrl.wearAlerts)
 router.get('/geography', ctrl.geography)
 router.get('/performance', ctrl.performance)
 router.get('/sat-breakdown', ctrl.satBreakdown)
+router.get('/speed-by-material', ctrl.speedByMaterial)
 
 export default router

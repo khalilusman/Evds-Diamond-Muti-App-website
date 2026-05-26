@@ -386,6 +386,9 @@
       "field_email": "Correo electrónico",
       "field_country": "País",
       "panel_header": "Ticket SAT",
+      "filter_family": "Familia de Disco",
+      "filter_all_families": "Todas las Familias",
+      "filter_lot_placeholder": "Buscar por número de lote...",
       "symptoms": {
         "ABNORMAL_WEAR": "Desgaste anormal",
         "OVERHEATING": "Sobrecalentamiento",
@@ -435,7 +438,11 @@
       "col_expires": "Expira",
       "series_activations": "Activaciones",
       "series_usage_logs": "Registros de uso",
-      "series_tickets": "Tickets"
+      "series_tickets": "Tickets",
+      "speed_by_material": "Velocidad Media de Corte por Material y Espesor",
+      "col_avg_speed": "Vel. Media (mm/min)",
+      "col_sessions": "Sesiones",
+      "col_total_metres": "Metros Totales"
     },
     "security": {
       "failed_today": "Intentos fallidos (hoy)",

@@ -15,6 +15,7 @@ export interface SatTicketSummary {
     label: {
       unique_code: string
       nominal_diameter: number
+      lot_number: string
       family: { name: string }
     }
   }
@@ -80,6 +81,8 @@ export interface SatListParams {
   limit?: number
   date_from?: string
   date_to?: string
+  family_name?: string
+  lot_number?: string
 }
 
 export const getSatTickets = async (params: SatListParams = {}): Promise<{ data: SatTicketSummary[]; total: number; page: number }> => {

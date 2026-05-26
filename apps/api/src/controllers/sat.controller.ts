@@ -139,6 +139,15 @@ export async function listTickets(req: Request, res: Response, next: NextFunctio
       where.created_at = createdAt
     }
 
+    const labelFilter: Record<string, unknown> = {}
+    if (req.query.lot_number) {
+      labelFilter.lot_number = { contains: String(req.query.lot_number), mode: 'insensitive' }
+    }
+    if (req.query.family_name && req.query.family_name !== 'ALL') {
+      labelFilter.family = { name: String(req.query.family_name) }
+    }
+    if (Object.keys(labelFilter).length > 0) where.activation = { label: labelFilter }
+
     const [tickets, total] = await prisma.$transaction([
       prisma.satTicket.findMany({
         where,
@@ -152,7 +161,7 @@ export async function listTickets(req: Request, res: Response, next: NextFunctio
               diameter_at_activation: true,
               thickness: true,
               material_type: true,
-              label: { select: { unique_code: true, nominal_diameter: true, family: { select: { name: true } } } },
+              label: { select: { unique_code: true, nominal_diameter: true, lot_number: true, family: { select: { name: true } } } },
               company: { select: { name: true } },
             },
           },

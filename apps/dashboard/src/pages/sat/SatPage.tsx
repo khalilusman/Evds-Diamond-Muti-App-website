@@ -320,17 +320,21 @@ export default function SatPage() {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [familyFilter, setFamilyFilter] = useState('')
+  const [lotFilter, setLotFilter] = useState('')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sat-tickets', activeTab, page, dateFrom, dateTo],
+    queryKey: ['sat-tickets', activeTab, page, dateFrom, dateTo, familyFilter, lotFilter],
     queryFn: () => getSatTickets({
       status: activeTab === 'All' ? undefined : activeTab,
       page,
       limit: 20,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
+      family_name: familyFilter || undefined,
+      lot_number: lotFilter || undefined,
     }),
     placeholderData: (prev) => prev,
   })
@@ -379,6 +383,26 @@ export default function SatPage() {
               value={dateTo}
               onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
               className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              title={t('sat.filter_family')}
+              value={familyFilter}
+              onChange={(e) => { setFamilyFilter(e.target.value); setPage(1) }}
+              className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="">{t('sat.filter_all_families')}</option>
+              {['THE QUEEN', 'THE KING', 'HERCULES', 'V-ARRAY'].map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder={t('sat.filter_lot_placeholder')}
+              value={lotFilter}
+              onChange={(e) => { setLotFilter(e.target.value); setPage(1) }}
+              className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div className="flex gap-1 flex-wrap">

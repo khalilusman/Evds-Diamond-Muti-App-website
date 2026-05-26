@@ -225,6 +225,46 @@ export async function satBreakdown(_req: Request, res: Response, next: NextFunct
   }
 }
 
+// GET /api/analytics/speed-by-material
+export async function speedByMaterial(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const rows = await prisma.$queryRaw<{
+      material_type: string
+      thickness: number
+      avg_feed: number
+      avg_rpm: number
+      total_sessions: number
+      total_metres: number
+    }[]>`
+      SELECT
+        material_type,
+        thickness::float          AS thickness,
+        AVG(feed_used)::int       AS avg_feed,
+        AVG(rpm_used)::int        AS avg_rpm,
+        COUNT(*)::int             AS total_sessions,
+        SUM(meters_cut)::float    AS total_metres
+      FROM usage_logs
+      WHERE material_type IS NOT NULL
+        AND feed_used IS NOT NULL
+        AND rpm_used IS NOT NULL
+      GROUP BY material_type, thickness
+      ORDER BY material_type, thickness
+    `
+    res.json({
+      data: rows.map((r) => ({
+        material_type:  r.material_type,
+        thickness:      Number(r.thickness),
+        avg_feed:       Number(r.avg_feed),
+        avg_rpm:        Number(r.avg_rpm),
+        total_sessions: Number(r.total_sessions),
+        total_metres:   Math.round(Number(r.total_metres) * 10) / 10,
+      })),
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // GET /api/analytics/performance
 export async function performance(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

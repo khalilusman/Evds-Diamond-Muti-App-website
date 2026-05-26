@@ -386,6 +386,9 @@
       "field_email": "Email",
       "field_country": "Country",
       "panel_header": "SAT Ticket",
+      "filter_family": "Disc Family",
+      "filter_all_families": "All Families",
+      "filter_lot_placeholder": "Search by lot number...",
       "symptoms": {
         "ABNORMAL_WEAR": "Abnormal Wear",
         "OVERHEATING": "Overheating",
@@ -435,7 +438,11 @@
       "col_expires": "Expires",
       "series_activations": "Activations",
       "series_usage_logs": "Usage Logs",
-      "series_tickets": "Tickets"
+      "series_tickets": "Tickets",
+      "speed_by_material": "Average Cutting Speed by Material & Thickness",
+      "col_avg_speed": "Avg Speed (mm/min)",
+      "col_sessions": "Sessions",
+      "col_total_metres": "Total Metres"
     },
     "security": {
       "failed_today": "Failed Attempts (today)",

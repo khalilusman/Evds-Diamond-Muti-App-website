@@ -22,7 +22,7 @@ import {
 } from '../../api/labels.api'
 import useAuthStore from '../../stores/auth.store'
 
-const LOT_REGEX = /^[A-Z]?\d{8}$/
+const LOT_REGEX = /^[A-Z0-9-]{3,20}$/i
 
 const DIAMETERS_BY_FAMILY: Record<string, number[]> = {
   QUEEN:    [350, 400, 450],

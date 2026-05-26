@@ -92,3 +92,17 @@ export const getSatBreakdown = async (): Promise<SatBreakdownPoint[]> => {
   const { data } = await api.get('/api/analytics/sat-breakdown')
   return data.data
 }
+
+export interface SpeedByMaterialPoint {
+  material_type: string
+  thickness: number
+  avg_feed: number
+  avg_rpm: number
+  total_sessions: number
+  total_metres: number
+}
+
+export const getSpeedByMaterial = async (): Promise<SpeedByMaterialPoint[]> => {
+  const { data } = await api.get('/api/analytics/speed-by-material')
+  return data.data
+}
