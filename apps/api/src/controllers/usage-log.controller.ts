@@ -42,10 +42,10 @@ export async function createUsageLog(req: Request, res: Response, next: NextFunc
       ? Number(lastLog.current_diameter)
       : Number(activation.diameter_at_activation)
 
-    if (currentDia > previousDia + 1.0) {
+    if (currentDia > previousDia) {
       res.status(400).json({
         error: 'DIAMETER_FRAUD',
-        message: 'Current diameter must not exceed previous recorded diameter',
+        message: 'Diameter cannot be larger than previous measurement',
         previous_diameter: previousDia,
         submitted_diameter: currentDia,
       })

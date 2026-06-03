@@ -107,13 +107,15 @@ export default function UsagePage() {
       return
     }
     const entered = Number(form.current_diameter)
-    const max = selectedActivation.diameter_at_activation + 1
-    if (entered > max) {
-      setFraudAlert({ entered, max })
+    const latestDia = logs.length > 0
+      ? Number(logs[0].current_diameter)
+      : selectedActivation.diameter_at_activation
+    if (entered > latestDia) {
+      setFraudAlert({ entered, max: latestDia })
     } else {
       setFraudAlert(null)
     }
-  }, [form.current_diameter, selectedActivation])
+  }, [form.current_diameter, selectedActivation, logs])
 
   const submitMut = useMutation({
     mutationFn: async () => {
@@ -155,8 +157,10 @@ export default function UsagePage() {
     },
   })
 
-  const serverFraud =
+  const serverFraudData =
     submitMut.isError && (submitMut.error as any)?.response?.data?.error === 'DIAMETER_FRAUD'
+      ? (submitMut.error as any)?.response?.data as { previous_diameter: number; submitted_diameter: number }
+      : null
 
   function validate() {
     const e: Partial<FormState> = {}
@@ -318,9 +322,9 @@ export default function UsagePage() {
                 )}
                 {fraudAlert && (
                   <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-400">
-                    ⚠️ Diameter exceeds activation diameter by more than 1mm
+                    ⚠️ Error: Diameter cannot exceed previous measurement of {fraudAlert.max}mm
                     <br />
-                    Max allowed: {fraudAlert.max}mm &nbsp;|&nbsp; You entered: {fraudAlert.entered}mm
+                    You entered: {fraudAlert.entered}mm
                   </div>
                 )}
                 {!fraudAlert && form.current_diameter && selectedActivation && (
@@ -436,9 +440,11 @@ export default function UsagePage() {
               </div>
 
               {/* Server-side fraud error */}
-              {serverFraud && (
+              {serverFraudData && (
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-400">
-                  {t('usage.errors.diameter_fraud')}
+                  ⚠️ Error: Diameter cannot exceed previous measurement of {serverFraudData.previous_diameter}mm
+                  <br />
+                  You entered: {serverFraudData.submitted_diameter}mm
                 </div>
               )}
 
