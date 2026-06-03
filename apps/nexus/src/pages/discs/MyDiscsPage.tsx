@@ -22,11 +22,17 @@ const MATERIAL_LABELS: Record<string, string> = {
   quartzite_es: 'Quartzite (Cuarcita)',
 }
 
+function wearRuleFromFamily(familyName: string): number {
+  const u = familyName.toUpperCase()
+  if (u.includes('QUEEN') || u.includes('V-ARRAY')) return 40
+  return 20
+}
+
 function borderColor(wearPct: number | null | undefined, status: string): string {
   if (!ACTIVE_STATUSES.has(status)) return 'border-l-gray-400 dark:border-l-gray-600'
   const p = wearPct ?? 0
-  if (p >= 80) return 'border-l-red-500'
-  if (p >= 50) return 'border-l-orange-500'
+  if (p >= 95) return 'border-l-red-500'
+  if (p >= 80) return 'border-l-orange-500'
   return 'border-l-green-500'
 }
 
@@ -95,11 +101,10 @@ function DiscCard({ activation }: { activation: Activation }) {
 
   const isActive = ACTIVE_STATUSES.has(activation.status)
   const wearPct = activation.wear_pct
-  const hasWearRef = !!(activation.wear_reference?.measured_new && activation.wear_reference?.measured_worn)
   const currentDia = activation.current_diameter ?? activation.diameter_at_activation
-  const mmRemaining = hasWearRef
-    ? currentDia - activation.wear_reference!.measured_worn
-    : null
+  const diaAtAct = activation.diameter_at_activation
+  const wearRuleMm = wearRuleFromFamily(activation.label?.family?.name ?? '')
+  const mmRemaining = Math.max(0, wearRuleMm - (diaAtAct - currentDia))
 
   const expiresAt = new Date(activation.expires_at)
   const now = Date.now()
@@ -166,31 +171,17 @@ function DiscCard({ activation }: { activation: Activation }) {
 
       {/* Wear gauge */}
       <div className="flex flex-col items-center py-1">
-        {hasWearRef ? (
-          <>
-            <WearGauge
-              currentDiameter={currentDia}
-              newDiameter={activation.wear_reference!.measured_new}
-              wornDiameter={activation.wear_reference!.measured_worn}
-              size="md"
-            />
-            {mmRemaining !== null && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {mmRemaining.toFixed(1)}mm {t('discs.wear_gauge')}
-              </p>
-            )}
-          </>
-        ) : wearPct !== null && wearPct !== undefined ? (
-          <div className="text-center">
-            <p
-              className="text-2xl font-bold"
-              style={{ color: (wearPct >= 80) ? '#ef4444' : (wearPct >= 50) ? '#f97316' : '#22c55e' }}
-            >
-              {Math.round(wearPct)}%
-            </p>
-            <p className="text-xs text-gray-400">worn</p>
-          </div>
-        ) : null}
+        <>
+          <WearGauge
+            currentDiameter={currentDia}
+            diameterAtActivation={diaAtAct}
+            wearRuleMm={wearRuleMm}
+            size="md"
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {mmRemaining.toFixed(1)}mm {t('discs.wear_gauge')}
+          </p>
+        </>
 
         {(wearPct ?? 0) >= 95 && isActive && (
           <p className="text-xs font-semibold text-red-600 dark:text-red-400 mt-1">

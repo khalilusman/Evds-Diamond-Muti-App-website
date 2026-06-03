@@ -1,7 +1,7 @@
 interface WearGaugeProps {
   currentDiameter: number
-  newDiameter: number
-  wornDiameter: number
+  diameterAtActivation: number
+  wearRuleMm: number
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -12,19 +12,18 @@ const sizeMap = {
 }
 
 function getColor(pct: number): string {
-  if (pct <= 50) return '#22c55e'
-  if (pct <= 80) return '#f97316'
+  if (pct < 80) return '#22c55e'
+  if (pct < 95) return '#f97316'
   return '#ef4444'
 }
 
 export default function WearGauge({
   currentDiameter,
-  newDiameter,
-  wornDiameter,
+  diameterAtActivation,
+  wearRuleMm,
   size = 'md',
 }: WearGaugeProps) {
-  const range = newDiameter - wornDiameter
-  const rawPct = range > 0 ? ((newDiameter - currentDiameter) / range) * 100 : 0
+  const rawPct = wearRuleMm > 0 ? ((diameterAtActivation - currentDiameter) / wearRuleMm) * 100 : 0
   const wearPct = Math.min(100, Math.max(0, rawPct))
 
   const { box, r, stroke, fontSize, labelSize } = sizeMap[size]

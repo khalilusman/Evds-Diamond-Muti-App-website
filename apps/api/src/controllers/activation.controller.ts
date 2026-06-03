@@ -5,9 +5,15 @@ import { FAMILY_VALID_MATERIALS } from '../services/label.service'
 
 const WINDOW_HOURS = 168 // 7 days
 
-function calcWear(newDia: number, wornDia: number, currentDia: number): number {
-  if (newDia === wornDia) return 0
-  return Math.min(100, Math.max(0, ((newDia - currentDia) / (newDia - wornDia)) * 100))
+function wearRuleMm(familyName: string): number {
+  const u = familyName.toUpperCase()
+  if (u.includes('QUEEN') || u.includes('V-ARRAY')) return 40
+  return 20
+}
+
+function calcWear(diameterAtActivation: number, currentDia: number, familyName: string): number {
+  const rule = wearRuleMm(familyName)
+  return Math.min(100, Math.max(0, ((diameterAtActivation - currentDia) / rule) * 100))
 }
 
 // POST /api/activations
@@ -193,7 +199,7 @@ export async function listActivations(req: Request, res: Response, next: NextFun
           where: { family_id_nominal_diameter: { family_id: a.label.family_id, nominal_diameter: a.label.nominal_diameter } },
         })
         const currentDia = latestLog ? Number(latestLog.current_diameter) : Number(a.diameter_at_activation)
-        const wearPct = wearRef ? calcWear(wearRef.measured_new, wearRef.measured_worn, currentDia) : null
+        const wearPct = calcWear(Number(a.diameter_at_activation), currentDia, a.label.family.name)
         return { ...a, current_diameter: currentDia, wear_pct: wearPct, wear_reference: wearRef }
       })
     )
@@ -234,7 +240,7 @@ export async function getActivation(req: Request, res: Response, next: NextFunct
     ])
 
     const currentDia = latestLog ? Number(latestLog.current_diameter) : Number(activation.diameter_at_activation)
-    const wearPct = wearRef ? calcWear(wearRef.measured_new, wearRef.measured_worn, currentDia) : null
+    const wearPct = calcWear(Number(activation.diameter_at_activation), currentDia, activation.label.family.name)
 
     res.json({ data: { ...activation, catalog_options: catalogOptions, wear_reference: wearRef, current_diameter: currentDia, wear_pct: wearPct } })
   } catch (err) {
