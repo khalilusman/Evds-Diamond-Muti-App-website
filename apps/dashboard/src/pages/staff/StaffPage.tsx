@@ -24,9 +24,8 @@ const getStaff = async (): Promise<StaffMember[]> => {
 }
 
 const createStaff = async (payload: { name: string; email: string; password: string; role: string }): Promise<StaffMember> => {
-  const secret = import.meta.env.VITE_ADMIN_SECRET ?? ''
   const { data } = await api.post('/api/admin/evds-staff', payload, {
-    headers: { 'X-Admin-Secret': secret },
+    headers: { 'X-Admin-Secret': 'evds-admin-2026-mP3xK9qR7n' },
   })
   return data.data
 }
