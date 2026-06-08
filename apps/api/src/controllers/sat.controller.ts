@@ -71,7 +71,7 @@ export async function createTicket(req: Request, res: Response, next: NextFuncti
     })
 
     const diagnosis = catalogEntry
-      ? runDiagnosis({
+      ? await runDiagnosis({
           symptom_code,
           rpm_reported: rpm_reported ? Number(rpm_reported) : null,
           feed_reported: feed_reported ? Number(feed_reported) : null,

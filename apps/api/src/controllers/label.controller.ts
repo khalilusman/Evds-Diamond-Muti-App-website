@@ -384,7 +384,7 @@ async function drawLabel(
 
   // ── SECTION 1: header ─────────────────────────────────────────────────────
   try {
-    doc.image(LOGO_PATH, lx, cy - 4, { width: 42 })
+    doc.image(LOGO_PATH, lx, cy - 4, { width: 45 })
   } catch {
     doc.font('Helvetica-Bold').fontSize(8).fillColor('#1e3a8a')
       .text('EVDS Diamond', lx, cy + 2, { lineBreak: false })

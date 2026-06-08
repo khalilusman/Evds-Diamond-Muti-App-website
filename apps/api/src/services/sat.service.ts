@@ -1,3 +1,5 @@
+import { prisma } from '../lib/prisma'
+
 interface CatalogParams {
   rpm: number
   thickness_t2: number
@@ -109,7 +111,7 @@ const DEFAULT_RESULT: Omit<DiagnosisResult, 'auto_diagnosis'> = {
   prevention: 'Monitor RPM and feed speed regularly',
 }
 
-export function runDiagnosis(input: DiagnosisInput): DiagnosisResult {
+export async function runDiagnosis(input: DiagnosisInput): Promise<DiagnosisResult> {
   const { symptom_code, rpm_reported, feed_reported, catalog } = input
   const thickness = input.thickness ?? 2.0
   const useT2 = Math.abs(Number(catalog.thickness_t2) - thickness) < 0.01
@@ -128,7 +130,18 @@ export function runDiagnosis(input: DiagnosisInput): DiagnosisResult {
 
   const autoDiagnosis = deviations.length > 0 ? deviations.join('. ') : 'No parameter deviation detected.'
 
-  // Find matching rule
+  // DB rule takes priority over hardcoded rules
+  const dbRule = await prisma.satDiagnosisRule.findUnique({ where: { symptom_code } })
+  if (dbRule) {
+    return {
+      auto_diagnosis: autoDiagnosis,
+      probable_cause: dbRule.probable_cause,
+      recommended_fix: dbRule.recommended_fix,
+      prevention: dbRule.prevention,
+    }
+  }
+
+  // Fall back to hardcoded rules
   const matched = DIAGNOSIS_RULES.find((rule) => {
     const symptomMatch = rule.symptoms.includes(symptom_code)
     const rpmMatch = rule.rpmFlag === undefined || rule.rpmFlag === rpmFlag

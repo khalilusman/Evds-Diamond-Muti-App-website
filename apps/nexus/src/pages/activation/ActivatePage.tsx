@@ -11,27 +11,12 @@ import { lookupCode, createActivation, LabelLookup, Activation } from '../../api
 import { getMachines } from '../../api/machines.api'
 import { getCatalog, getWearReference } from '../../api/catalog.api'
 
-// Family → valid material types
-const FAMILY_MATERIALS: Record<string, { value: string; label: string }[]> = {
-  'THE QUEEN': [{ value: 'quartzite_es', label: 'Quartzite (Cuarcita)' }],
-  'THE KING': [
-    { value: 'porcelain', label: 'Porcelain / Dekton' },
-    { value: 'quartzite', label: 'Quartzite (International)' },
-  ],
-  HERCULES: [{ value: 'porcelain', label: 'Porcelain / Dekton' }],
-  'V-ARRAY': [
-    { value: 'granite', label: 'Granite' },
-    { value: 'compact_quartz', label: 'Compact Quartz' },
-  ],
-}
-
-// Material → valid thickness options (cm)
-const MATERIAL_THICKNESS: Record<string, number[]> = {
-  quartzite_es:   [2.0, 3.0],
-  porcelain:      [2.0, 1.2],
-  quartzite:      [2.0, 3.0],
-  granite:        [2.0, 3.0],
-  compact_quartz: [2.0, 3.0],
+const MATERIAL_LABELS: Record<string, string> = {
+  quartzite_es:   'Quartzite (Cuarcita)',
+  porcelain:      'Porcelain / Dekton',
+  quartzite:      'Quartzite (International)',
+  granite:        'Granite',
+  compact_quartz: 'Compact Quartz',
 }
 
 interface FormData {
@@ -239,24 +224,28 @@ function Step2({
   const { t } = useTranslation()
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const familyName = label.family.name.toUpperCase()
-  const materialOptions = FAMILY_MATERIALS[familyName] ?? []
-
   const { data: machines = [], isLoading: machinesLoading } = useQuery({
     queryKey: ['machines'],
     queryFn: getMachines,
   })
 
-  const { data: catalogList = [] } = useQuery({
-    queryKey: ['catalog', label.family.id, formData.material_type, label.nominal_diameter],
-    queryFn: () =>
-      getCatalog({
-        family_id: label.family.id,
-        material_type: formData.material_type || undefined,
-        nominal_diameter: label.nominal_diameter,
-      }),
-    enabled: !!formData.material_type,
+  const { data: familyCatalog = [] } = useQuery({
+    queryKey: ['catalog-family', label.family.id, label.nominal_diameter],
+    queryFn: () => getCatalog({ family_id: label.family.id, nominal_diameter: label.nominal_diameter }),
   })
+
+  const materialOptions = (() => {
+    const seen = new Set<string>()
+    return familyCatalog
+      .filter(e => { if (seen.has(e.material_type)) return false; seen.add(e.material_type); return true })
+      .map(e => ({ value: e.material_type, label: MATERIAL_LABELS[e.material_type] ?? e.material_type }))
+  })()
+
+  const thicknessOptions = (() => {
+    const entry = familyCatalog.find(e => e.material_type === formData.material_type)
+    if (!entry) return [2.0, 3.0]
+    return Array.from(new Set([Number(entry.thickness_t1), Number(entry.thickness_t2)])).sort((a, b) => a - b)
+  })()
 
   const { data: wearList = [] } = useQuery({
     queryKey: ['wear', label.family.id, label.nominal_diameter],
@@ -264,7 +253,7 @@ function Step2({
       getWearReference({ family_id: label.family.id, nominal_diameter: label.nominal_diameter }),
   })
 
-  const catalog = catalogList[0]
+  const catalog = familyCatalog.find(e => e.material_type === formData.material_type) ?? null
   const wear = wearList[0]
 
   function pickT2(t: number) {
@@ -273,14 +262,15 @@ function Step2({
   const recommendedFeed = catalog ? (pickT2(formData.thickness) ? catalog.feed_t2 : catalog.feed_t1) : null
   const expectedLife    = catalog ? (pickT2(formData.thickness) ? catalog.life_t2 : catalog.life_t1) : null
 
-  // Auto-select if only one material option
+  // Auto-select if only one material option (fires when catalog loads)
   useEffect(() => {
     if (materialOptions.length === 1 && !formData.material_type) {
-      const first = MATERIAL_THICKNESS[materialOptions[0].value]?.[0] ?? 2.0
+      const entry = familyCatalog.find(e => e.material_type === materialOptions[0].value)
+      const first = entry ? Number(entry.thickness_t1) : 2.0
       setFormData({ ...formData, material_type: materialOptions[0].value, thickness: first })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [materialOptions.length])
 
   function validate() {
     const e: Record<string, string> = {}
@@ -329,7 +319,8 @@ function Step2({
                 key={opt.value}
                 type="button"
                 onClick={() => {
-                  const first = MATERIAL_THICKNESS[opt.value]?.[0] ?? 2.0
+                  const entry = familyCatalog.find(e => e.material_type === opt.value)
+                  const first = entry ? Number(entry.thickness_t1) : 2.0
                   setFormData({ ...formData, material_type: opt.value, thickness: first })
                   setErrors((e) => ({ ...e, material: '' }))
                 }}
@@ -355,7 +346,7 @@ function Step2({
             {t('activation.select_thickness')}
           </label>
           <div className="flex gap-3">
-            {(MATERIAL_THICKNESS[formData.material_type] ?? [2.0, 3.0]).map((t) => (
+            {thicknessOptions.map((t) => (
               <button
                 key={t}
                 type="button"
@@ -566,9 +557,7 @@ function Step3({
     },
   })
 
-  const materialOptions = FAMILY_MATERIALS[label.family.name.toUpperCase()] ?? []
-  const materialLabel =
-    materialOptions.find((m) => m.value === formData.material_type)?.label ?? formData.material_type
+  const materialLabel = MATERIAL_LABELS[formData.material_type] ?? formData.material_type
 
   return (
     <div className="max-w-lg mx-auto space-y-4">

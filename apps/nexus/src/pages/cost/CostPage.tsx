@@ -17,28 +17,12 @@ type InputMethod = 'DXF' | 'MANUAL'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const FAMILY_MATERIALS: Record<string, string[]> = {
-  'THE QUEEN': ['quartzite_es'],
-  'THE KING':  ['porcelain', 'quartzite'],
-  'HERCULES':  ['porcelain'],
-  'V-ARRAY':   ['granite', 'compact_quartz'],
-}
-
 const MATERIAL_LABELS: Record<string, string> = {
   quartzite_es:   'Quartzite (Cuarcita)',
   porcelain:      'Porcelain / Dekton',
   quartzite:      'Quartzite (Intl.)',
   granite:        'Granite',
   compact_quartz: 'Compact Quartz',
-}
-
-const MATERIAL_THICKNESS: Record<string, number[]> = {
-  porcelain: [2.0, 1.2],
-}
-const DEFAULT_THICKNESS = [2.0, 3.0]
-
-function getThicknesses(material: string): number[] {
-  return MATERIAL_THICKNESS[material] ?? DEFAULT_THICKNESS
 }
 
 // ─── FormState ────────────────────────────────────────────────────────────────
@@ -277,19 +261,7 @@ export default function CostPage() {
   // Auto-select first activation on load
   useEffect(() => {
     if (activations.length > 0 && !form.activation_id) {
-      const first = activations[0]
-      const fName = first.label?.family?.name ?? ''
-      const available = FAMILY_MATERIALS[fName] ?? []
-      const defaultMat = available.includes(first.material_type ?? '')
-        ? first.material_type!
-        : available[0] ?? ''
-      const thicknesses = getThicknesses(defaultMat)
-      setForm((f) => ({
-        ...f,
-        activation_id: first.id,
-        material_type:  defaultMat,
-        thickness:      String(thicknesses[0]),
-      }))
+      setForm((f) => ({ ...f, activation_id: activations[0].id }))
     }
   }, [activations])
 
@@ -309,52 +281,53 @@ export default function CostPage() {
   }, [costConfig])
 
   const selectedActivation = activations.find((a) => a.id === form.activation_id) ?? null
-  const familyName = selectedActivation?.label?.family?.name ?? ''
-  const availableMaterials = FAMILY_MATERIALS[familyName] ?? []
-  const thicknessOptions = getThicknesses(form.material_type)
 
-  function handleActivationChange(id: string) {
-    const a = activations.find((x) => x.id === id)
-    const fName = a?.label?.family?.name ?? ''
-    const available = FAMILY_MATERIALS[fName] ?? []
-    const defaultMat = available.includes(a?.material_type ?? '')
-      ? a!.material_type!
-      : available[0] ?? ''
-    const thicknesses = getThicknesses(defaultMat)
-    setForm((f) => ({
-      ...f,
-      activation_id: id,
-      material_type:  defaultMat,
-      thickness:      String(thicknesses[0]),
-    }))
-  }
-
-  function handleMaterialChange(mat: string) {
-    const thicknesses = getThicknesses(mat)
-    setForm((f) => ({
-      ...f,
-      material_type: mat,
-      thickness:     String(thicknesses[0]),
-    }))
-  }
-
-  // Catalog query
-  const { data: catalogList = [] } = useQuery({
-    queryKey: [
-      'catalog',
-      selectedActivation?.label?.family?.id,
-      form.material_type,
-      selectedActivation?.label?.nominal_diameter,
-    ],
+  // Fetch all catalog entries for this family + diameter to derive materials and thicknesses dynamically
+  const { data: familyCatalog = [] } = useQuery({
+    queryKey: ['catalog-family', selectedActivation?.label?.family?.id, selectedActivation?.label?.nominal_diameter],
     queryFn: () =>
       getCatalog({
         family_id:        selectedActivation!.label.family.id,
-        material_type:    form.material_type,
         nominal_diameter: selectedActivation!.label.nominal_diameter,
       }),
-    enabled: !!selectedActivation && !!form.material_type,
+    enabled: !!selectedActivation?.label?.family?.id,
   })
-  const catalog: DiscCatalog | null = catalogList[0] ?? null
+
+  const availableMaterials: string[] = (() => {
+    const seen = new Set<string>()
+    return familyCatalog
+      .filter((e: DiscCatalog) => { if (seen.has(e.material_type)) return false; seen.add(e.material_type); return true })
+      .map((e: DiscCatalog) => e.material_type)
+  })()
+
+  const thicknessOptions: number[] = (() => {
+    const entry = familyCatalog.find((e: DiscCatalog) => e.material_type === form.material_type)
+    if (!entry) return [2.0, 3.0]
+    return Array.from(new Set([Number(entry.thickness_t1), Number(entry.thickness_t2)])).sort((a, b) => a - b)
+  })()
+
+  // Auto-select material once catalog loads for selected activation
+  useEffect(() => {
+    if (availableMaterials.length > 0 && !form.material_type) {
+      const defaultMat = availableMaterials[0]
+      const entry = familyCatalog.find((e: DiscCatalog) => e.material_type === defaultMat)
+      const defaultThk = entry ? Number(entry.thickness_t1) : 2.0
+      setForm((f) => ({ ...f, material_type: defaultMat, thickness: String(defaultThk) }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableMaterials.join(',')])
+
+  const catalog: DiscCatalog | null = familyCatalog.find((e: DiscCatalog) => e.material_type === form.material_type) ?? null
+
+  function handleActivationChange(id: string) {
+    setForm((f) => ({ ...f, activation_id: id, material_type: '', thickness: '2.0' }))
+  }
+
+  function handleMaterialChange(mat: string) {
+    const entry = familyCatalog.find((e: DiscCatalog) => e.material_type === mat)
+    const defaultThk = entry ? Number(entry.thickness_t1) : 2.0
+    setForm((f) => ({ ...f, material_type: mat, thickness: String(defaultThk) }))
+  }
 
   const thickness = Number(form.thickness)
   const useT2      = catalog ? Math.abs(Number(catalog.thickness_t2) - thickness) < 0.01 : false

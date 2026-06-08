@@ -376,3 +376,18 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+// ─── 16. sat_diagnosis_rules ─
+
+model SatDiagnosisRule {
+  id               String   @id @default(uuid())
+  symptom_code     String   @unique @db.VarChar(50)
+  symptom_label    String   @db.VarChar(100)
+  probable_cause   String   @db.Text
+  recommended_fix  String   @db.Text
+  prevention       String   @db.Text
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@map("sat_diagnosis_rules")
+}

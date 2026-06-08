@@ -11,13 +11,6 @@ export const FAMILY_ABBREVIATIONS: Record<string, string> = {
   'V-ARRAY': 'VA',
 }
 
-// Maps family name → allowed material_groups
-export const FAMILY_VALID_MATERIALS: Record<string, string[]> = {
-  'THE QUEEN': ['quartzite_es'],
-  'THE KING':  ['porcelain', 'quartzite'],
-  HERCULES:    ['porcelain'],
-  'V-ARRAY':   ['granite', 'compact_quartz'],
-}
 
 function randomCode(): string {
   // 32 chars in alphabet, 256 / 32 = 8 exactly → no modulo bias

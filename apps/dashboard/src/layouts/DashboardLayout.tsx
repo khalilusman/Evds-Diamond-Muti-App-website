@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: '🔒', labelKey: 'nav.security',         path: '/security' },
   { icon: <SATIncidentIcon size={22} stroke="currentColor" />, labelKey: 'nav.sat', path: '/sat' },
   { icon: '📊', labelKey: 'nav.analytics',        path: '/analytics' },
+  { icon: '🛠️', labelKey: 'nav.tools',            path: '/tools' },
   { icon: '👤', labelKey: 'nav.staff',            path: '/staff', adminOnly: true },
   { icon: '📱', labelKey: 'nav.qr',               path: '/qr',   adminOnly: true },
 ]

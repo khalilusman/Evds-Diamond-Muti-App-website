@@ -15,6 +15,7 @@ import AnalyticsPage from '../pages/analytics/AnalyticsPage'
 import SecurityPage from '../pages/security/SecurityPage'
 import StaffPage from '../pages/staff/StaffPage'
 import QrPage from '../pages/qr/QrPage'
+import ToolsPage from '../pages/tools/ToolsPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuthStore()
@@ -43,6 +44,7 @@ export default function AppRouter() {
       <Route path="/sat" element={<RequireAuth><SatPage /></RequireAuth>} />
       <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
       <Route path="/security" element={<RequireAuth><SecurityPage /></RequireAuth>} />
+      <Route path="/tools" element={<RequireAuth><ToolsPage /></RequireAuth>} />
       <Route path="/staff" element={<RequireAuth><AdminOnly><StaffPage /></AdminOnly></RequireAuth>} />
       <Route path="/qr" element={<RequireAuth><AdminOnly><QrPage /></AdminOnly></RequireAuth>} />
 

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
 import { createAuditLog } from '../services/audit.service'
-import { FAMILY_VALID_MATERIALS } from '../services/label.service'
 
 const WINDOW_HOURS = 168 // 7 days
 
@@ -79,20 +78,31 @@ export async function createActivation(req: Request, res: Response, next: NextFu
     }
 
     const thick = thickness != null ? Number(thickness) : 2.0
-    const VALID_THICKNESSES = [1.2, 2.0, 3.0]
-    if (!VALID_THICKNESSES.some((t) => Math.abs(t - thick) < 0.01)) {
-      res.status(400).json({ error: 'VALIDATION_ERROR', message: 'thickness must be 1.2, 2.0, or 3.0' })
-      return
-    }
 
-    // Validate material vs family
-    const validMaterials = FAMILY_VALID_MATERIALS[label.family.name] ?? []
-    if (!validMaterials.includes(material_type)) {
+    // Validate material and thickness dynamically from disc_catalog
+    const catalogEntries = await prisma.discCatalog.findMany({
+      where: { family_id: label.family_id, nominal_diameter: label.nominal_diameter },
+    })
+    const validMaterials = [...new Set(catalogEntries.map(e => e.material_type))]
+
+    if (validMaterials.length === 0 || !validMaterials.includes(material_type)) {
       res.status(400).json({
         error: 'INVALID_MATERIAL',
         message: `${label.family.name} is not compatible with ${material_type}. Valid materials: ${validMaterials.join(', ')}`,
       })
       return
+    }
+
+    const catalogEntry = catalogEntries.find(e => e.material_type === material_type)
+    if (catalogEntry) {
+      const validThicknesses = [Number(catalogEntry.thickness_t1), Number(catalogEntry.thickness_t2)]
+      if (!validThicknesses.some(t => Math.abs(t - thick) < 0.01)) {
+        res.status(400).json({
+          error: 'VALIDATION_ERROR',
+          message: `thickness must be one of: ${validThicknesses.join(', ')} for ${material_type}`,
+        })
+        return
+      }
     }
 
     const isWindow2 = label.status === 'EXPIRED_W1'
