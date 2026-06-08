@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast'
 import { useState, useEffect } from 'react'
+import DashboardLayout from '../../layouts/DashboardLayout'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../../stores/auth.store'
@@ -277,7 +278,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
 
   if (editingFamily && (!initialized || existingCatalogQ.isLoading || existingWearQ.isLoading)) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 p-8 text-center">
           <p className="text-sm text-gray-400">Loading family data…</p>
         </div>
@@ -286,7 +287,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-2xl mx-4 p-6 my-auto">
 
         {/* Step indicator */}
@@ -316,17 +317,17 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Family Name *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wear Rule (mm) *</label>
               <input type="number" value={wearRuleMm} onChange={e => setWearRuleMm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (optional)</label>
               <textarea value={description} rows={2} onChange={e => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none" />
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Available Diameters</label>
@@ -337,7 +338,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
                       onChange={() => setDiameters(prev =>
                         prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b)
                       )}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{d} mm</span>
                   </label>
                 ))}
@@ -360,7 +361,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
                     onChange={() => setMaterials(prev =>
                       prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]
                     )}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600" />
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{MATERIAL_LABELS[m]}</span>
                   <span className="text-xs text-gray-400 font-mono">{m}</span>
                 </label>
@@ -413,7 +414,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
                             <td key={field} className="px-1 py-1.5">
                               <input type="number" value={row[field]}
                                 onChange={e => upd(field, e.target.value)}
-                                className="w-16 px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs" />
+                                className="w-16 px-1.5 py-1 border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs" />
                             </td>
                           ))}
                         </tr>
@@ -457,12 +458,12 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
                         <td className="px-4 py-2.5">
                           <input type="number" value={row.measured_new}
                             onChange={e => upd('measured_new', e.target.value)}
-                            className="w-28 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+                            className="w-28 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
                         </td>
                         <td className="px-4 py-2.5">
                           <input type="number" value={row.measured_worn}
                             onChange={e => upd('measured_worn', e.target.value)}
-                            className="w-28 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+                            className="w-28 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
                         </td>
                       </tr>
                     )
@@ -483,7 +484,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
           <div className="flex gap-3">
             {step > 1 && (
               <button onClick={() => setStep(s => s - 1)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                className="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
                 ← Back
               </button>
             )}
@@ -508,7 +509,7 @@ function FamilyWizard({ editingFamily, onClose, onDone }: {
   )
 }
 
-// ─── Catalog Modal ────────────────────────────────────────────────────────────
+// ─── Catalog Modal 
 
 function CatalogModal({ initial, families, onClose, onSave, saving }: {
   initial: CatalogForm
@@ -529,14 +530,14 @@ function CatalogModal({ initial, families, onClose, onSave, saving }: {
           type={type}
           value={form[fk]}
           onChange={(e) => setForm(p => ({ ...p, [fk]: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
         />
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 my-auto">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">
           {isEdit ? t('tools.edit_catalog') : t('tools.add_catalog')}
@@ -550,7 +551,7 @@ function CatalogModal({ initial, families, onClose, onSave, saving }: {
               value={form.family_id}
               disabled={isEdit}
               onChange={(e) => setForm(p => ({ ...p, family_id: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             >
               <option value="">—</option>
               {families.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -604,7 +605,7 @@ function WearModal({ entry, onClose, onSave, saving }: {
   const [measWorn, setMeasWorn] = useState(String(entry.measured_worn))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{t('tools.edit_wear')}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
@@ -616,14 +617,14 @@ function WearModal({ entry, onClose, onSave, saving }: {
               {t('tools.col_measured_new')} (mm)
             </label>
             <input type="number" value={measNew} onChange={(e) => setMeasNew(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               {t('tools.col_measured_worn')} (mm)
             </label>
             <input type="number" value={measWorn} onChange={(e) => setMeasWorn(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
           </div>
         </div>
         <div className="flex gap-3 mt-6 justify-end">
@@ -659,7 +660,7 @@ function SatRuleModal({ symptomCode, defaultLabel, initial, onClose, onSave, sav
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 my-auto">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
           {initial ? t('tools.sat_edit_rule') : t('tools.sat_add_rule')}
@@ -672,7 +673,7 @@ function SatRuleModal({ symptomCode, defaultLabel, initial, onClose, onSave, sav
             </label>
             <input type="text" value={form.symptom_label}
               onChange={e => setForm(p => ({ ...p, symptom_label: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
           </div>
           {(['probable_cause', 'recommended_fix', 'prevention'] as const).map(field => (
             <div key={field}>
@@ -681,7 +682,7 @@ function SatRuleModal({ symptomCode, defaultLabel, initial, onClose, onSave, sav
               </label>
               <textarea value={form[field]} rows={3}
                 onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none" />
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none" />
             </div>
           ))}
         </div>
@@ -811,14 +812,15 @@ export default function ToolsPage() {
       'px-4 py-2 rounded-lg font-medium text-sm transition-colors cursor-pointer border',
       active
         ? 'bg-blue-600 text-white border-blue-600'
-        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
+        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700',
     ].join(' ')
 
-  const TH = 'text-left px-4 py-3 font-medium text-gray-700 dark:text-gray-300 text-sm'
-  const TD = 'px-4 py-3 text-gray-600 dark:text-gray-300 text-sm'
+  const TH = 'text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-sm'
+  const TD = 'px-4 py-3 text-gray-600 dark:text-gray-400 text-sm'
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <DashboardLayout title={t('tools.title')}>
+    <div className="max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t('tools.title')}</h1>
 
       {/* Tab bar */}
@@ -909,7 +911,7 @@ export default function ToolsPage() {
             <select
               value={familyFilter}
               onChange={(e) => setFamilyFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             >
               <option value="">{t('tools.all_families')}</option>
               {families.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -1134,7 +1136,7 @@ export default function ToolsPage() {
 
       {/* Delete Family Confirm */}
       {deleteFamilyTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
               {t('tools.delete_confirm')} "{deleteFamilyTarget.name}"?
@@ -1217,7 +1219,7 @@ export default function ToolsPage() {
 
       {/* Delete Confirm */}
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {t('tools.delete_confirm_title')}
@@ -1242,5 +1244,6 @@ export default function ToolsPage() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   )
 }
