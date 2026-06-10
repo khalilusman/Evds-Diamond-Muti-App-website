@@ -15,6 +15,7 @@ router.get('/security-alerts', requireRole('EVDS_ADMIN', 'EVDS_SUPPORT'), ctrl.s
 router.get('/export/pdf/:lot_number', requireRole('EVDS_ADMIN'), ctrl.exportPdf)
 router.get('/export/csv/:lot_number', requireRole('EVDS_ADMIN'), ctrl.exportCsv)
 router.patch('/lot/:lot_number/void', requireRole('EVDS_ADMIN'), ctrl.voidLot)
+router.delete('/lot/:lot_number', requireRole('EVDS_ADMIN'), ctrl.deleteLot)
 router.patch('/:id/void', requireRole('EVDS_ADMIN'), ctrl.voidLabel)
 router.delete('/:id', requireRole('EVDS_ADMIN'), ctrl.deleteLabel)
 router.get('/lookup', ctrl.lookupLabel)   // any authenticated role

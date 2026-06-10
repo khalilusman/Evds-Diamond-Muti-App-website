@@ -15,7 +15,7 @@ export interface LotSummary {
   used: number
   expired_w1: number
   voided: number
-  generated_at: string
+  created_at: string
 }
 
 export interface GeneratePayload {
@@ -91,6 +91,11 @@ export const voidLot = async (lotNumber: string, reason: string): Promise<{ void
 
 export const deleteLabel = async (id: string): Promise<void> => {
   await api.delete(`/api/labels/${id}`)
+}
+
+export const deleteLot = async (lotNumber: string): Promise<{ deleted: number }> => {
+  const { data } = await api.delete(`/api/labels/lot/${lotNumber}`)
+  return data.data
 }
 
 export const exportCsv = async (lotNumber: string): Promise<void> => {

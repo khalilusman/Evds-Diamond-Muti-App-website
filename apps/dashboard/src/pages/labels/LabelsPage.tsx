@@ -16,6 +16,7 @@ import {
   voidLabel as voidLabelApi,
   voidLot as voidLotApi,
   deleteLabel as deleteLabelApi,
+  deleteLot as deleteLotApi,
   LotSummary,
   GenerateResult,
   DiscLabel,
@@ -23,6 +24,12 @@ import {
 import useAuthStore from '../../stores/auth.store'
 
 const LOT_REGEX = /^[A-Z0-9-]{3,20}$/i
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+}
 
 const DIAMETERS_BY_FAMILY: Record<string, number[]> = {
   QUEEN:    [350, 400, 450],
@@ -58,9 +65,10 @@ interface ConfirmModalProps {
   onConfirm: () => void
   onCancel: () => void
   loading: boolean
+  confirmLabel?: string
 }
 
-function ConfirmModal({ type, title, description, reason, onReasonChange, onConfirm, onCancel, loading }: ConfirmModalProps) {
+function ConfirmModal({ type, title, description, reason, onReasonChange, onConfirm, onCancel, loading, confirmLabel }: ConfirmModalProps) {
   const { t } = useTranslation()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -93,7 +101,7 @@ function ConfirmModal({ type, title, description, reason, onReasonChange, onConf
               type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {loading ? '…' : type === 'delete' ? t('labels.delete_forever') : t('labels.void')}
+            {loading ? '…' : confirmLabel ?? (type === 'delete' ? t('labels.delete_forever') : t('labels.void'))}
           </button>
         </div>
       </div>
@@ -144,8 +152,8 @@ function ExpandedLotLabels({ lot_number, isAdmin, onVoidLabel, onDeleteLabel }: 
         <thead>
           <tr className="text-gray-400 dark:text-gray-500">
             <th className="text-left py-1.5 pr-3 font-medium">{t('labels.col_code')}</th>
-            <th className="text-left py-1.5 px-2 font-medium">{t('labels.col_full_code')}</th>
             <th className="text-left py-1.5 px-2 font-medium">{t('labels.col_status')}</th>
+            <th className="text-left py-1.5 px-2 font-medium">{t('labels.col_created')}</th>
             <th className="text-left py-1.5 pl-2 font-medium">{t('labels.col_actions')}</th>
           </tr>
         </thead>
@@ -156,11 +164,13 @@ function ExpandedLotLabels({ lot_number, isAdmin, onVoidLabel, onDeleteLabel }: 
             return (
               <tr key={label.id}>
                 <td className="py-1.5 pr-3 font-mono">{label.unique_code}</td>
-                <td className="py-1.5 px-2 font-mono text-gray-500 dark:text-gray-400">{label.full_code}</td>
                 <td className="py-1.5 px-2">
                   <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${statusColor(label.status)}`}>
                     {label.status}
                   </span>
+                </td>
+                <td className="py-1.5 px-2 text-gray-500 dark:text-gray-400">
+                  {new Date(label.created_at).toLocaleDateString()}
                 </td>
                 <td className="py-1.5 pl-2">
                   <div className="flex items-center gap-1">
@@ -200,12 +210,13 @@ interface LotRowProps {
   expanded: boolean
   onToggle: () => void
   onVoidLot: (lotNumber: string, unusedCount: number) => void
+  onDeleteLot: (lotNumber: string, unusedCount: number) => void
   onVoidLabel: (id: string) => void
   onDeleteLabel: (id: string) => void
   isAdmin: boolean
 }
 
-function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel, isAdmin }: LotRowProps) {
+function LotRow({ lot, expanded, onToggle, onVoidLot, onDeleteLot, onVoidLabel, onDeleteLabel, isAdmin }: LotRowProps) {
   const { t } = useTranslation()
   const [pdfLoading, setPdfLoading] = useState(false)
   const [csvLoading, setCsvLoading] = useState(false)
@@ -238,6 +249,9 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
         className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
         onClick={onToggle}
       >
+        <td className="px-2 py-3 w-8 text-center text-gray-400 dark:text-gray-500 text-xs select-none">
+          {expanded ? '▼' : '▶'}
+        </td>
         <td className="px-5 py-3 font-mono text-sm font-medium text-gray-900 dark:text-white">{lot.lot_number}</td>
         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{lot.family_name}</td>
         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{lot.nominal_diameter}mm</td>
@@ -246,8 +260,8 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
         <td className="px-5 py-3"><LotBadge count={lot.used} color="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" /></td>
         <td className="px-5 py-3"><LotBadge count={lot.expired_w1} color="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" /></td>
         <td className="px-5 py-3"><LotBadge count={lot.voided} color="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" /></td>
-        <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500">
-          {new Date(lot.generated_at).toLocaleDateString()}
+        <td className="px-5 py-3 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+          {formatDate(lot.created_at)}
         </td>
         <td className="px-5 py-3">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -255,7 +269,7 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
               {expanded ? t('labels.collapse_labels') : t('labels.expand_labels')}
             </Button>
             <Button variant="ghost" size="sm" loading={pdfLoading} onClick={(e) => { e.stopPropagation(); handlePdf() }}>
-              {t('labels.export_pdf')}
+              {t('labels.reprint')}
             </Button>
             <Button variant="ghost" size="sm" loading={csvLoading} onClick={(e) => { e.stopPropagation(); handleCsv() }}>
               {t('labels.export_csv')}
@@ -268,6 +282,16 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
             >
               {t('labels.void_lot')}
             </Button>
+            {isAdmin && lot.total === lot.unused && lot.total > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); onDeleteLot(lot.lot_number, lot.unused) }}
+                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+              >
+                {t('labels.delete_lot')}
+              </Button>
+            )}
           </div>
         </td>
       </tr>
@@ -289,10 +313,13 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onVoidLabel, onDeleteLabel
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+type SortBy = 'created_at'
+
 type ModalState =
   | { type: 'void-label'; id: string }
   | { type: 'void-lot'; lotNumber: string; unusedCount: number }
   | { type: 'delete'; id: string }
+  | { type: 'delete-lot'; lotNumber: string; unusedCount: number }
   | null
 
 export default function LabelsPage() {
@@ -303,6 +330,8 @@ export default function LabelsPage() {
   const [expandedLot, setExpandedLot] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
   const [reason, setReason] = useState('')
+  const [sortBy, setSortBy] = useState<SortBy>('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   const [lotNumber, setLotNumber] = useState('')
   const [familyId, setFamilyId] = useState('')
@@ -377,12 +406,34 @@ export default function LabelsPage() {
     onError: (err: any) => toast.error(err?.response?.data?.message ?? t('labels.delete_label_error')),
   })
 
-  const mutationLoading = voidLabelMut.isPending || voidLotMut.isPending || deleteLabelMut.isPending
+  const deleteLotMut = useMutation({
+    mutationFn: ({ lotNumber }: { lotNumber: string }) => deleteLotApi(lotNumber),
+    onSuccess: () => {
+      toast.success(t('labels.lot_deleted'))
+      qc.invalidateQueries({ queryKey: ['lots'] })
+      qc.invalidateQueries({ queryKey: ['labels'] })
+      setModal(null)
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? t('labels.delete_lot_error')),
+  })
+
+  const mutationLoading = voidLabelMut.isPending || voidLotMut.isPending || deleteLabelMut.isPending || deleteLotMut.isPending
+
+  function handleSort(col: SortBy) {
+    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }
+
+  const sortedLots = [...lots].sort((a, b) => {
+    const [ta, tb] = [new Date(a.created_at).getTime(), new Date(b.created_at).getTime()]
+    return sortDir === 'asc' ? ta - tb : tb - ta
+  })
 
   function handleConfirm() {
     if (!modal) return
     if (modal.type === 'void-label') voidLabelMut.mutate({ id: modal.id, reason })
     else if (modal.type === 'void-lot') voidLotMut.mutate({ lotNumber: modal.lotNumber, reason })
+    else if (modal.type === 'delete-lot') deleteLotMut.mutate({ lotNumber: modal.lotNumber })
     else deleteLabelMut.mutate({ id: modal.id })
   }
 
@@ -401,17 +452,22 @@ export default function LabelsPage() {
   }
 
   const modalConfig = modal ? {
-    type: modal.type === 'delete' ? 'delete' as const : 'void' as const,
+    type: (modal.type === 'delete' || modal.type === 'delete-lot') ? 'delete' as const : 'void' as const,
     title: modal.type === 'delete'
       ? t('labels.delete_title')
+      : modal.type === 'delete-lot'
+      ? `${t('labels.delete_lot_confirm')} ${modal.lotNumber}?`
       : modal.type === 'void-lot'
       ? t('labels.void_lot_title', { count: modal.unusedCount })
       : t('labels.void_label_title'),
     description: modal.type === 'delete'
       ? t('labels.delete_desc')
+      : modal.type === 'delete-lot'
+      ? t('labels.delete_lot_warning')
       : modal.type === 'void-lot'
       ? t('labels.void_lot_desc', { count: modal.unusedCount, lotNumber: modal.lotNumber })
       : t('labels.void_label_desc'),
+    confirmLabel: modal.type === 'delete-lot' ? t('labels.delete_lot') : undefined,
   } : null
 
   return (
@@ -540,6 +596,7 @@ export default function LabelsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   <tr>
+                    <th className="px-2 py-3 w-8" />
                     <th className="text-left px-5 py-3">{t('labels.col_lot')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_family')}</th>
                     <th className="text-left px-5 py-3">Ø</th>
@@ -548,18 +605,24 @@ export default function LabelsPage() {
                     <th className="text-left px-5 py-3">Active / Used</th>
                     <th className="text-left px-5 py-3">{t('labels.col_exp_w1')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_voided')}</th>
-                    <th className="text-left px-5 py-3">{t('labels.generated_at')}</th>
+                    <th
+                      className="text-left px-5 py-3 cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200"
+                      onClick={() => handleSort('created_at')}
+                    >
+                      {t('labels.col_created')} {sortBy === 'created_at' ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
+                    </th>
                     <th className="text-left px-5 py-3">{t('labels.col_actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {lots.map((lot) => (
+                  {sortedLots.map((lot) => (
                     <LotRow
                       key={lot.lot_number}
                       lot={lot}
                       expanded={expandedLot === lot.lot_number}
                       onToggle={() => setExpandedLot(expandedLot === lot.lot_number ? null : lot.lot_number)}
                       onVoidLot={(lotNumber, unusedCount) => { setReason(''); setModal({ type: 'void-lot', lotNumber, unusedCount }) }}
+                      onDeleteLot={(lotNumber, unusedCount) => setModal({ type: 'delete-lot', lotNumber, unusedCount })}
                       onVoidLabel={(id) => { setReason(''); setModal({ type: 'void-label', id }) }}
                       onDeleteLabel={(id) => setModal({ type: 'delete', id })}
                       isAdmin={isAdmin}
@@ -582,6 +645,7 @@ export default function LabelsPage() {
           onConfirm={handleConfirm}
           onCancel={() => { setModal(null); setReason('') }}
           loading={mutationLoading}
+          confirmLabel={modalConfig.confirmLabel}
         />
       )}
     </DashboardLayout>

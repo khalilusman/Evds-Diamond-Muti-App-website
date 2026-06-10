@@ -237,7 +237,17 @@
       "label_deleted": "Label deleted",
       "delete_label_error": "Failed to delete label",
       "pdf_error": "Failed to export PDF",
-      "csv_error": "Failed to export CSV"
+      "csv_error": "Failed to export CSV",
+      "col_created": "Created",
+      "delete_lot": "Delete Lot",
+      "reprint": "📄 PDF",
+      "sort_newest": "Newest First",
+      "sort_oldest": "Oldest First",
+      "expand": "View Labels",
+      "delete_lot_confirm": "Delete lot",
+      "delete_lot_warning": "This will permanently delete all unused labels in this lot. This cannot be undone.",
+      "lot_deleted": "Lot deleted",
+      "delete_lot_error": "Failed to delete lot"
     },
     "discs": {
       "title": "Disc Monitoring",

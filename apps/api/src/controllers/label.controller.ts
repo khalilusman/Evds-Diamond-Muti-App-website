@@ -131,6 +131,7 @@ export async function listLots(req: Request, res: Response, next: NextFunction):
     const raw = await prisma.discLabel.groupBy({
       by: ['lot_number', 'family_id', 'nominal_diameter'],
       _count: { id: true },
+      _min: { created_at: true },
     })
 
     const statusCounts = await prisma.discLabel.groupBy({
@@ -162,8 +163,11 @@ export async function listLots(req: Request, res: Response, next: NextFunction):
         used: (sc['ACTIVE'] ?? 0) + (sc['EXPIRED_W1'] ?? 0) + (sc['ACTIVE_W2'] ?? 0) + (sc['PERMANENTLY_DEACTIVATED'] ?? 0),
         expired_w1: sc['EXPIRED_W1'] ?? 0,
         voided: sc['VOIDED'] ?? 0,
+        created_at: r._min.created_at?.toISOString() ?? new Date(0).toISOString(),
       }
     })
+
+    lots.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
     res.json({ data: lots })
   } catch (err) {
@@ -353,6 +357,44 @@ export async function deleteLabel(req: Request, res: Response, next: NextFunctio
     })
 
     res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
+// DELETE /api/labels/lot/:lot_number
+export async function deleteLot(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const lotNumber = String(req.params.lot_number)
+
+    const nonUnused = await prisma.discLabel.count({
+      where: { lot_number: lotNumber, status: { not: 'UNUSED' } },
+    })
+    if (nonUnused > 0) {
+      res.status(400).json({
+        error: 'CANNOT_DELETE_LOT',
+        message: 'Cannot delete lot with activated labels. Void unused labels instead.',
+      })
+      return
+    }
+
+    const total = await prisma.discLabel.count({ where: { lot_number: lotNumber } })
+    if (total === 0) {
+      res.status(404).json({ error: 'NOT_FOUND', message: 'No labels found for this lot' })
+      return
+    }
+
+    await prisma.discLabel.deleteMany({ where: { lot_number: lotNumber } })
+
+    await createAuditLog({
+      actorId: req.user!.userId,
+      entityType: 'disc_labels',
+      entityId: lotNumber,
+      action: 'LOT_DELETED',
+      newValue: { lot_number: lotNumber, deleted_count: total },
+    })
+
+    res.json({ data: { deleted: total } })
   } catch (err) {
     next(err)
   }

@@ -237,7 +237,17 @@
       "label_deleted": "Etiqueta eliminada",
       "delete_label_error": "Error al eliminar la etiqueta",
       "pdf_error": "Error al exportar PDF",
-      "csv_error": "Error al exportar CSV"
+      "csv_error": "Error al exportar CSV",
+      "col_created": "Creado",
+      "delete_lot": "Eliminar Lote",
+      "reprint": "📄 PDF",
+      "sort_newest": "Más reciente primero",
+      "sort_oldest": "Más antiguo primero",
+      "expand": "Ver Etiquetas",
+      "delete_lot_confirm": "Eliminar lote",
+      "delete_lot_warning": "Esto eliminará permanentemente todas las etiquetas sin usar en este lote. Esta acción no se puede deshacer.",
+      "lot_deleted": "Lote eliminado",
+      "delete_lot_error": "Error al eliminar el lote"
     },
     "discs": {
       "title": "Monitoreo de discos",
