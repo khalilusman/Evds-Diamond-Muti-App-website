@@ -313,8 +313,6 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onDeleteLot, onVoidLabel, 
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type SortBy = 'created_at'
-
 type ModalState =
   | { type: 'void-label'; id: string }
   | { type: 'void-lot'; lotNumber: string; unusedCount: number }
@@ -330,9 +328,6 @@ export default function LabelsPage() {
   const [expandedLot, setExpandedLot] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
   const [reason, setReason] = useState('')
-  const [sortBy, setSortBy] = useState<SortBy>('created_at')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-
   const [lotNumber, setLotNumber] = useState('')
   const [familyId, setFamilyId] = useState('')
   const [diameter, setDiameter] = useState<number>(400)
@@ -419,15 +414,9 @@ export default function LabelsPage() {
 
   const mutationLoading = voidLabelMut.isPending || voidLotMut.isPending || deleteLabelMut.isPending || deleteLotMut.isPending
 
-  function handleSort(col: SortBy) {
-    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortBy(col); setSortDir('desc') }
-  }
-
-  const sortedLots = [...lots].sort((a, b) => {
-    const [ta, tb] = [new Date(a.created_at).getTime(), new Date(b.created_at).getTime()]
-    return sortDir === 'asc' ? ta - tb : tb - ta
-  })
+  const sortedLots = [...lots].sort((a, b) =>
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
 
   function handleConfirm() {
     if (!modal) return
@@ -605,12 +594,7 @@ export default function LabelsPage() {
                     <th className="text-left px-5 py-3">Active / Used</th>
                     <th className="text-left px-5 py-3">{t('labels.col_exp_w1')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_voided')}</th>
-                    <th
-                      className="text-left px-5 py-3 cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200"
-                      onClick={() => handleSort('created_at')}
-                    >
-                      {t('labels.col_created')} {sortBy === 'created_at' ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
-                    </th>
+                    <th className="text-left px-5 py-3">{t('labels.col_created')}</th>
                     <th className="text-left px-5 py-3">{t('labels.col_actions')}</th>
                   </tr>
                 </thead>
