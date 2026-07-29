@@ -41,6 +41,7 @@
       "have_account": "Hai già un account?",
       "login_title": "Bentornato",
       "login_subtitle": "Accedi al tuo account EVDS",
+      "invalid_credentials": "Email o password errati. Per favore riprova.",
       "register_title": "Crea il tuo account",
       "register_subtitle": "Unisciti alla piattaforma EVDS Nexus"
     },

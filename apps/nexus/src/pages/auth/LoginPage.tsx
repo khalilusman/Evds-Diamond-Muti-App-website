@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
+import { X } from 'lucide-react'
 import AuthLayout from '../../layouts/AuthLayout'
 import Input from '../../components/Input'
 import Button from '../../components/Button'
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [invalidCredentials, setInvalidCredentials] = useState(false)
 
   function validate() {
     const e: typeof errors = {}
@@ -29,6 +31,7 @@ export default function LoginPage() {
   async function handleSubmit(evt: React.FormEvent) {
     evt.preventDefault()
     if (!validate()) return
+    setInvalidCredentials(false)
     setLoading(true)
     try {
       const { data } = await api.post('/api/auth/login', { email, password })
@@ -52,8 +55,8 @@ export default function LoginPage() {
         toast.error(`Account suspended${reason ? `: ${reason}` : ''}. Contact EVDS support.`)
       } else if (code === 'ACCOUNT_DEACTIVATED') {
         toast.error('Account deactivated. Contact EVDS support.')
-      } else if (status === 401) {
-        toast.error('Invalid email or password.')
+      } else if (code === 'INVALID_CREDENTIALS' || status === 401) {
+        setInvalidCredentials(true)
       } else {
         toast.error(t('errors.generic'))
       }
@@ -77,7 +80,10 @@ export default function LoginPage() {
           type="email"
           placeholder="you@company.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            setInvalidCredentials(false)
+          }}
           error={errors.email}
           autoComplete="email"
         />
@@ -86,7 +92,10 @@ export default function LoginPage() {
           type="password"
           placeholder="••••••••"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            setInvalidCredentials(false)
+          }}
           error={errors.password}
           autoComplete="current-password"
         />
@@ -99,6 +108,15 @@ export default function LoginPage() {
             {t('auth.forgot_password')}
           </Link>
         </div>
+
+        {invalidCredentials && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <X className="text-red-500 shrink-0" size={18} />
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {t('auth.invalid_credentials')}
+            </p>
+          </div>
+        )}
 
         <Button type="submit" fullWidth loading={loading}>
           {t('auth.login')}

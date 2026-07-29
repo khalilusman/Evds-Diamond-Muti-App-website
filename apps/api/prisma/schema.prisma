@@ -197,6 +197,7 @@ model DiscLabel {
   activation_count Int         @default(0)
   activated_by     String?
   company_id       String?
+  print_job_id     String?
   created_at       DateTime    @default(now())
   voided_at        DateTime?
   void_reason      String?     @db.Text
@@ -218,7 +219,7 @@ model DiscActivation {
   user_id               String
   machine_id            String
   diameter_at_activation Decimal         @db.Decimal(6, 1)
-  thickness              Decimal          @db.Decimal(4, 1)
+  thickness              Decimal?         @db.Decimal(4, 1)
   material_type          String?          @db.VarChar(50)
   activation_window     Int              @default(1)
   activated_at          DateTime         @default(now())

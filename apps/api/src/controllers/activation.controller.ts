@@ -77,9 +77,9 @@ export async function createActivation(req: Request, res: Response, next: NextFu
       return
     }
 
-    const thick = thickness != null ? Number(thickness) : 2.0
+    const thick = thickness != null ? Number(thickness) : null
 
-    // Validate material and thickness dynamically from disc_catalog
+    // Validate material dynamically from disc_catalog
     const catalogEntries = await prisma.discCatalog.findMany({
       where: { family_id: label.family_id, nominal_diameter: label.nominal_diameter },
     })
@@ -91,18 +91,6 @@ export async function createActivation(req: Request, res: Response, next: NextFu
         message: `${label.family.name} is not compatible with ${material_type}. Valid materials: ${validMaterials.join(', ')}`,
       })
       return
-    }
-
-    const catalogEntry = catalogEntries.find(e => e.material_type === material_type)
-    if (catalogEntry) {
-      const validThicknesses = [Number(catalogEntry.thickness_t1), Number(catalogEntry.thickness_t2)]
-      if (!validThicknesses.some(t => Math.abs(t - thick) < 0.01)) {
-        res.status(400).json({
-          error: 'VALIDATION_ERROR',
-          message: `thickness must be one of: ${validThicknesses.join(', ')} for ${material_type}`,
-        })
-        return
-      }
     }
 
     const isWindow2 = label.status === 'EXPIRED_W1'

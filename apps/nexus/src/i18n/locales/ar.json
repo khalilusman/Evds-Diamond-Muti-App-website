@@ -41,6 +41,7 @@
       "have_account": "لديك حساب بالفعل؟",
       "login_title": "مرحباً بعودتك",
       "login_subtitle": "سجّل دخولك إلى حسابك في EVDS",
+      "invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
       "register_title": "أنشئ حسابك",
       "register_subtitle": "انضم إلى منصة EVDS Nexus"
     },

@@ -25,6 +25,13 @@ import useAuthStore from '../../stores/auth.store'
 
 const LOT_REGEX = /^[A-Z0-9-]{3,20}$/i
 
+// Multiple rows can share a lot_number (one per print job), so the row identity
+// must include print_job_id. Legacy rows predate print-job tracking and fall back
+// to lot_number + family + diameter, which was the old (pre-fix) grouping key.
+function lotRowKey(lot: LotSummary): string {
+  return `${lot.print_job_id ?? 'legacy'}::${lot.lot_number}::${lot.family_id}::${lot.nominal_diameter}`
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -123,16 +130,18 @@ function statusColor(status: string): string {
 
 interface ExpandedLotLabelsProps {
   lot_number: string
+  print_job_id: string | null
   isAdmin: boolean
   onVoidLabel: (id: string) => void
   onDeleteLabel: (id: string) => void
 }
 
-function ExpandedLotLabels({ lot_number, isAdmin, onVoidLabel, onDeleteLabel }: ExpandedLotLabelsProps) {
+function ExpandedLotLabels({ lot_number, print_job_id, isAdmin, onVoidLabel, onDeleteLabel }: ExpandedLotLabelsProps) {
   const { t } = useTranslation()
   const { data: labels = [], isLoading } = useQuery({
-    queryKey: ['labels', lot_number],
-    queryFn: () => getLabels({ lot_number, limit: 200 }),
+    queryKey: ['labels', print_job_id ?? lot_number],
+    // Legacy labels generated before print jobs existed have no print_job_id — fall back to lot_number for those.
+    queryFn: () => (print_job_id ? getLabels({ print_job_id, limit: 200 }) : getLabels({ lot_number, limit: 200 })),
   })
 
   if (isLoading) {
@@ -222,9 +231,10 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onDeleteLot, onVoidLabel, 
   const [csvLoading, setCsvLoading] = useState(false)
 
   async function handlePdf() {
+    if (!lot.print_job_id) return
     setPdfLoading(true)
     try {
-      await exportPdf(lot.lot_number, lot.family_id, lot.nominal_diameter)
+      await exportPdf(lot.print_job_id, lot.lot_number)
     } catch {
       toast.error(t('labels.pdf_error'))
     } finally {
@@ -268,7 +278,14 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onDeleteLot, onVoidLabel, 
             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onToggle() }}>
               {expanded ? t('labels.collapse_labels') : t('labels.expand_labels')}
             </Button>
-            <Button variant="ghost" size="sm" loading={pdfLoading} onClick={(e) => { e.stopPropagation(); handlePdf() }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={pdfLoading}
+              disabled={!lot.print_job_id}
+              title={!lot.print_job_id ? 'Reprint unavailable for labels generated before print-job tracking was added' : undefined}
+              onClick={(e) => { e.stopPropagation(); handlePdf() }}
+            >
               {t('labels.reprint')}
             </Button>
             <Button variant="ghost" size="sm" loading={csvLoading} onClick={(e) => { e.stopPropagation(); handleCsv() }}>
@@ -300,6 +317,7 @@ function LotRow({ lot, expanded, onToggle, onVoidLot, onDeleteLot, onVoidLabel, 
           <td colSpan={11} className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50">
             <ExpandedLotLabels
               lot_number={lot.lot_number}
+              print_job_id={lot.print_job_id}
               isAdmin={isAdmin}
               onVoidLabel={onVoidLabel}
               onDeleteLabel={onDeleteLabel}
@@ -601,10 +619,10 @@ export default function LabelsPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {sortedLots.map((lot) => (
                     <LotRow
-                      key={lot.lot_number}
+                      key={lotRowKey(lot)}
                       lot={lot}
-                      expanded={expandedLot === lot.lot_number}
-                      onToggle={() => setExpandedLot(expandedLot === lot.lot_number ? null : lot.lot_number)}
+                      expanded={expandedLot === lotRowKey(lot)}
+                      onToggle={() => setExpandedLot(expandedLot === lotRowKey(lot) ? null : lotRowKey(lot))}
                       onVoidLot={(lotNumber, unusedCount) => { setReason(''); setModal({ type: 'void-lot', lotNumber, unusedCount }) }}
                       onDeleteLot={(lotNumber, unusedCount) => setModal({ type: 'delete-lot', lotNumber, unusedCount })}
                       onVoidLabel={(id) => { setReason(''); setModal({ type: 'void-label', id }) }}

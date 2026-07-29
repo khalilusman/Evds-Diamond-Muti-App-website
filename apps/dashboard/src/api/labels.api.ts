@@ -7,6 +7,7 @@ export interface DiscFamily {
 
 export interface LotSummary {
   lot_number: string
+  print_job_id: string | null
   family_id: string
   family_name: string
   nominal_diameter: number
@@ -46,11 +47,10 @@ export const generateLabels = async (payload: GeneratePayload): Promise<Generate
   return data.data
 }
 
-export const exportPdf = async (lotNumber: string, familyId: string, nominalDiameter: number): Promise<void> => {
+export const exportPdf = async (printJobId: string, lotNumber: string): Promise<void> => {
   const base = import.meta.env.VITE_API_URL || 'http://localhost:3000'
   const token = localStorage.getItem('evds_dashboard_token') ?? ''
-  const params = new URLSearchParams({ family_id: familyId, nominal_diameter: String(nominalDiameter) })
-  const response = await fetch(`${base}/api/labels/export/pdf/${lotNumber}?${params}`, {
+  const response = await fetch(`${base}/api/labels/export/pdf/${printJobId}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!response.ok) throw new Error(`Export failed: ${response.status}`)
@@ -58,7 +58,7 @@ export const exportPdf = async (lotNumber: string, familyId: string, nominalDiam
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `labels-${lotNumber}.pdf`
+  a.download = `labels-${lotNumber}-${printJobId}.pdf`
   a.click()
   window.URL.revokeObjectURL(url)
 }
@@ -66,6 +66,7 @@ export const exportPdf = async (lotNumber: string, familyId: string, nominalDiam
 export interface DiscLabel {
   id: string
   lot_number: string
+  print_job_id: string | null
   nominal_diameter: number
   unique_code: string
   full_code: string
@@ -75,7 +76,7 @@ export interface DiscLabel {
   family: { name: string }
 }
 
-export const getLabels = async (params: { lot_number?: string; status?: string; limit?: number }): Promise<DiscLabel[]> => {
+export const getLabels = async (params: { lot_number?: string; print_job_id?: string; status?: string; limit?: number }): Promise<DiscLabel[]> => {
   const { data } = await api.get('/api/labels', { params: { limit: 200, ...params } })
   return data.data ?? []
 }

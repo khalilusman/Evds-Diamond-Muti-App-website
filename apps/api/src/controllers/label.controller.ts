@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import path from 'path'
+import { randomUUID } from 'crypto'
 import PDFDocument from 'pdfkit'
 import QRCode from 'qrcode'
 import { prisma } from '../lib/prisma'
@@ -63,6 +64,7 @@ export async function generateLabels(req: Request, res: Response, next: NextFunc
 
     const codes = await generateUniqueCodes(qty)
     const now = new Date()
+    const print_job_id = randomUUID()
 
     const labelsData = codes.map((code) => {
       const full_code = `${lot_number}-${abbrev}${nominal_diameter}-${code}`
@@ -74,6 +76,7 @@ export async function generateLabels(req: Request, res: Response, next: NextFunc
         unique_code: code,
         full_code,
         qr_url,
+        print_job_id,
         created_at: now,
       }
     })
@@ -85,11 +88,11 @@ export async function generateLabels(req: Request, res: Response, next: NextFunc
       entityType: 'disc_labels',
       entityId: lot_number,
       action: 'LABEL_GENERATED',
-      newValue: { lot_number, family: family.name, nominal_diameter, quantity: qty },
+      newValue: { lot_number, print_job_id, family: family.name, nominal_diameter, quantity: qty },
     })
 
     res.status(201).json({
-      data: { lot_number, family: family.name, nominal_diameter: Number(nominal_diameter), quantity: qty, generated: codes.length },
+      data: { lot_number, print_job_id, family: family.name, nominal_diameter: Number(nominal_diameter), quantity: qty, generated: codes.length },
     })
   } catch (err) {
     next(err)
@@ -105,6 +108,7 @@ export async function listLabels(req: Request, res: Response, next: NextFunction
 
     const where: Record<string, unknown> = {}
     if (req.query.lot_number) where.lot_number = req.query.lot_number
+    if (req.query.print_job_id) where.print_job_id = req.query.print_job_id
     if (req.query.family_id) where.family_id = req.query.family_id
     if (req.query.status) where.status = req.query.status
 
@@ -129,19 +133,19 @@ export async function listLabels(req: Request, res: Response, next: NextFunction
 export async function listLots(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const raw = await prisma.discLabel.groupBy({
-      by: ['lot_number', 'family_id', 'nominal_diameter'],
+      by: ['print_job_id', 'lot_number', 'family_id', 'nominal_diameter'],
       _count: { id: true },
       _min: { created_at: true },
     })
 
     const statusCounts = await prisma.discLabel.groupBy({
-      by: ['lot_number', 'family_id', 'nominal_diameter', 'status'],
+      by: ['print_job_id', 'lot_number', 'family_id', 'nominal_diameter', 'status'],
       _count: { id: true },
     })
 
     const statusMap: Record<string, Record<string, number>> = {}
     for (const s of statusCounts) {
-      const key = `${s.lot_number}::${s.family_id}::${s.nominal_diameter}`
+      const key = `${s.print_job_id}::${s.lot_number}::${s.family_id}::${s.nominal_diameter}`
       if (!statusMap[key]) statusMap[key] = {}
       statusMap[key][s.status] = s._count.id
     }
@@ -151,10 +155,11 @@ export async function listLots(req: Request, res: Response, next: NextFunction):
     const familyMap = Object.fromEntries(families.map((f) => [f.id, f.name]))
 
     const lots = raw.map((r) => {
-      const key = `${r.lot_number}::${r.family_id}::${r.nominal_diameter}`
+      const key = `${r.print_job_id}::${r.lot_number}::${r.family_id}::${r.nominal_diameter}`
       const sc = statusMap[key] ?? {}
       return {
         lot_number: r.lot_number,
+        print_job_id: r.print_job_id,
         family_id: r.family_id,
         family_name: familyMap[r.family_id] ?? r.family_id,
         nominal_diameter: r.nominal_diameter,
@@ -521,13 +526,11 @@ async function drawLabel(
     .text('TRACK  –  VERIFY  –  CUT', lx, footerY + 1, { width: cw, align: 'center', lineBreak: false })
 }
 
-// GET /api/labels/export/pdf/:lot_number
+// GET /api/labels/export/pdf/:print_job_id
 export async function exportPdf(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { lot_number } = req.params
-    const where: Record<string, unknown> = { lot_number, status: 'UNUSED' }
-    if (req.query.family_id) where.family_id = req.query.family_id
-    if (req.query.nominal_diameter) where.nominal_diameter = Number(req.query.nominal_diameter)
+    const { print_job_id } = req.params
+    const where: Record<string, unknown> = { print_job_id, status: 'UNUSED' }
 
     const labels = await prisma.discLabel.findMany({
       where,
@@ -536,9 +539,11 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
     })
 
     if (labels.length === 0) {
-      res.status(404).json({ error: 'NOT_FOUND', message: 'No UNUSED labels found for this lot' })
+      res.status(404).json({ error: 'NOT_FOUND', message: 'No UNUSED labels found for this print job' })
       return
     }
+
+    const lot_number = labels[0].lot_number
 
     // Pre-fetch materials once (same family+diameter for all labels in a lot)
     const first = labels[0]
@@ -551,7 +556,7 @@ export async function exportPdf(req: Request, res: Response, next: NextFunction)
 
     const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true })
     res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', `attachment; filename="labels-${lot_number}.pdf"`)
+    res.setHeader('Content-Disposition', `attachment; filename="labels-${lot_number}-${print_job_id}.pdf"`)
     doc.pipe(res)
 
     const COLS     = 2
