@@ -54,6 +54,7 @@ export default function UsagePage() {
   const [form, setForm] = useState<FormState>(defaultForm())
   const [errors, setErrors] = useState<Partial<FormState>>({})
   const [fraudAlert, setFraudAlert] = useState<DiameterFraudAlert | null>(null)
+  const [customThickness, setCustomThickness] = useState(false)
 
   const { data: activations = [], isLoading: activationsLoading } = useQuery({
     queryKey: ['activations', 'active'],
@@ -123,7 +124,7 @@ export default function UsagePage() {
         activation_id: form.activation_id,
         current_diameter: parseFloat(form.current_diameter),
         meters_cut: parseFloat(form.meters_cut),
-        thickness: Number(form.thickness) || 2.0,
+        thickness: Number(form.thickness),
         material_type: selectedActivation?.material_type ?? 'unknown',
         rpm_used: form.rpm_used ? parseInt(form.rpm_used, 10) : null,
         feed_used: form.feed_used ? parseInt(form.feed_used, 10) : null,
@@ -169,6 +170,8 @@ export default function UsagePage() {
     else if (Number(form.current_diameter) <= 0) e.current_diameter = 'Must be positive' as any
     if (!form.meters_cut) e.meters_cut = t('common.required') as any
     else if (Number(form.meters_cut) <= 0) e.meters_cut = 'Must be positive' as any
+    if (!form.thickness) e.thickness = t('common.required') as any
+    else if (Number(form.thickness) <= 0) e.thickness = 'Must be positive' as any
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -263,15 +266,18 @@ export default function UsagePage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Thickness (cm)
                   </label>
-                  <div className="flex gap-2">
-                    {[1.2, 2.0, 3.0].map((t) => (
+                  <div className="flex gap-2 flex-wrap">
+                    {[1.0, 1.2, 2.0, 3.0].map((t) => (
                       <button
                         key={t}
                         type="button"
-                        onClick={() => setField('thickness', String(t))}
+                        onClick={() => {
+                          setCustomThickness(false)
+                          setField('thickness', String(t))
+                        }}
                         className={[
                           'px-5 py-2 rounded-xl border-2 text-sm font-medium transition-all',
-                          selectedThickness === t
+                          !customThickness && selectedThickness === t
                             ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
                             : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
                         ].join(' ')}
@@ -279,7 +285,33 @@ export default function UsagePage() {
                         {t} cm
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => setCustomThickness(true)}
+                      className={[
+                        'px-5 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                        customThickness
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
+                      ].join(' ')}
+                    >
+                      Custom
+                    </button>
                   </div>
+                  {customThickness && (
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={form.thickness}
+                      onChange={(e) => setField('thickness', e.target.value)}
+                      placeholder="Enter thickness (cm)"
+                      className="mt-2 w-full px-4 py-2 rounded-xl border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  )}
+                  {errors.thickness && (
+                    <p className="mt-1 text-sm text-red-500">{errors.thickness as string}</p>
+                  )}
                   {catalog && (
                     <div className="mt-2 grid grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-center">
                       <div>

@@ -23,7 +23,6 @@ interface FormData {
   unique_code: string
   machine_id: string
   diameter_at_activation: string
-  thickness: number
   material_type: string
   notes: string
 }
@@ -241,12 +240,6 @@ function Step2({
       .map(e => ({ value: e.material_type, label: MATERIAL_LABELS[e.material_type] ?? e.material_type }))
   })()
 
-  const thicknessOptions = (() => {
-    const entry = familyCatalog.find(e => e.material_type === formData.material_type)
-    if (!entry) return [2.0, 3.0]
-    return Array.from(new Set([Number(entry.thickness_t1), Number(entry.thickness_t2)])).sort((a, b) => a - b)
-  })()
-
   const { data: wearList = [] } = useQuery({
     queryKey: ['wear', label.family.id, label.nominal_diameter],
     queryFn: () =>
@@ -256,18 +249,14 @@ function Step2({
   const catalog = familyCatalog.find(e => e.material_type === formData.material_type) ?? null
   const wear = wearList[0]
 
-  function pickT2(t: number) {
-    return catalog ? Math.abs(Number(catalog.thickness_t2) - t) < 0.01 : false
-  }
-  const recommendedFeed = catalog ? (pickT2(formData.thickness) ? catalog.feed_t2 : catalog.feed_t1) : null
-  const expectedLife    = catalog ? (pickT2(formData.thickness) ? catalog.life_t2 : catalog.life_t1) : null
+  // Thickness is chosen later at usage-log time, so recommended params are shown for the base (t1) reference.
+  const recommendedFeed = catalog ? catalog.feed_t1 : null
+  const expectedLife    = catalog ? catalog.life_t1 : null
 
   // Auto-select if only one material option (fires when catalog loads)
   useEffect(() => {
     if (materialOptions.length === 1 && !formData.material_type) {
-      const entry = familyCatalog.find(e => e.material_type === materialOptions[0].value)
-      const first = entry ? Number(entry.thickness_t1) : 2.0
-      setFormData({ ...formData, material_type: materialOptions[0].value, thickness: first })
+      setFormData({ ...formData, material_type: materialOptions[0].value })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materialOptions.length])
@@ -319,9 +308,7 @@ function Step2({
                 key={opt.value}
                 type="button"
                 onClick={() => {
-                  const entry = familyCatalog.find(e => e.material_type === opt.value)
-                  const first = entry ? Number(entry.thickness_t1) : 2.0
-                  setFormData({ ...formData, material_type: opt.value, thickness: first })
+                  setFormData({ ...formData, material_type: opt.value })
                   setErrors((e) => ({ ...e, material: '' }))
                 }}
                 className={[
@@ -338,30 +325,6 @@ function Step2({
           {errors.material && (
             <p className="mt-1 text-sm text-red-500">{errors.material}</p>
           )}
-        </div>
-
-        {/* Thickness */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {t('activation.select_thickness')}
-          </label>
-          <div className="flex gap-3">
-            {thicknessOptions.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setFormData({ ...formData, thickness: t })}
-                className={[
-                  'flex-1 py-3 rounded-xl border-2 font-semibold text-sm transition-all',
-                  formData.thickness === t
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
-                ].join(' ')}
-              >
-                {t} cm
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Machine */}
@@ -521,11 +484,9 @@ function Step3({
   const catalog = catalogList[0]
   const wear = wearList[0]
 
-  function pickT2(t: number) {
-    return catalog ? Math.abs(Number(catalog.thickness_t2) - t) < 0.01 : false
-  }
-  const recommendedFeed = catalog ? (pickT2(formData.thickness) ? catalog.feed_t2 : catalog.feed_t1) : null
-  const expectedLife    = catalog ? (pickT2(formData.thickness) ? catalog.life_t2 : catalog.life_t1) : null
+  // Thickness is chosen later at usage-log time, so recommended params are shown for the base (t1) reference.
+  const recommendedFeed = catalog ? catalog.feed_t1 : null
+  const expectedLife    = catalog ? catalog.life_t1 : null
 
   const expiresAt = new Date(Date.now() + 168 * 60 * 60 * 1000)
   const isWindow2 = label.activation_count >= 1
@@ -536,7 +497,6 @@ function Step3({
         unique_code: formData.unique_code,
         machine_id: formData.machine_id,
         diameter_at_activation: Number(formData.diameter_at_activation),
-        thickness: formData.thickness,
         material_type: formData.material_type,
         notes: formData.notes || undefined,
       }),
@@ -574,7 +534,6 @@ function Step3({
             ['Diameter', `${label.nominal_diameter}mm`],
             ['Lot', label.lot_number],
             ['Material', materialLabel],
-            ['Thickness', `${formData.thickness}cm`],
             ['Machine', machine?.name ?? '—'],
             ['Measured Diameter', `${formData.diameter_at_activation}mm`],
           ].map(([k, v]) => (
@@ -706,7 +665,6 @@ export default function ActivatePage() {
     unique_code: '',
     machine_id: '',
     diameter_at_activation: '',
-    thickness: 2.0,
     material_type: '',
     notes: '',
   })
