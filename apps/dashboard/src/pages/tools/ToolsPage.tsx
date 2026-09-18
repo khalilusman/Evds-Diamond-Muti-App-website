@@ -38,7 +38,7 @@ interface WearRowValues {
 const MATERIAL_LABELS: Record<string, string> = {
   quartzite_es:   'Quartzite (Cuarcita)',
   porcelain:      'Porcelain / Dekton',
-  quartzite:      'Quartzite (International)',
+  quartzite:      'Marble',
   granite:        'Granite',
   compact_quartz: 'Compact Quartz',
 }

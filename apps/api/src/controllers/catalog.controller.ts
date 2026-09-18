@@ -15,7 +15,7 @@ const MATERIALS = {
     thickness_options: [2.0, 1.2],
   },
   quartzite: {
-    label: 'Quartzite (International)',
+    label: 'Marble',
     subtypes: ['White Quartzite', 'Taj Mahal', 'Sea Pearl', 'Other'],
     compatible_families: ['THE KING'],
     thickness_options: [2.0, 3.0],

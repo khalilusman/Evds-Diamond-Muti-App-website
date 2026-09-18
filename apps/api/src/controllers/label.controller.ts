@@ -16,7 +16,7 @@ const LABEL_GAP = 2 * MM
 const MATERIAL_DISPLAY: Record<string, string> = {
   quartzite_es:   'Quartzite (Cuarcita)',
   porcelain:      'Porcelain & Dekton',
-  quartzite:      'Quartzite',
+  quartzite:      'Marble',
   granite:        'Granite',
   compact_quartz: 'Compact Quartz',
 }

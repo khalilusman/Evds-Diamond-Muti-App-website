@@ -18,7 +18,7 @@ const MATERIAL_LABELS: Record<string, string> = {
   granite: 'Granite',
   compact_quartz: 'Compact Quartz',
   porcelain: 'Porcelain',
-  quartzite: 'Quartzite',
+  quartzite: 'Marble',
   quartzite_es: 'Quartzite (Cuarcita)',
 }
 

@@ -37,6 +37,12 @@ export const getDiscFamilies = async (): Promise<DiscFamily[]> => {
   return data.data ?? []
 }
 
+export const getCatalogDiameters = async (familyId: string): Promise<number[]> => {
+  const { data } = await api.get('/api/disc-catalog', { params: { family_id: familyId } })
+  const entries: { nominal_diameter: number }[] = data.data ?? []
+  return [...new Set(entries.map((e) => e.nominal_diameter))].sort((a, b) => a - b)
+}
+
 export const getLots = async (): Promise<LotSummary[]> => {
   const { data } = await api.get('/api/labels/lots')
   return data.data ?? []

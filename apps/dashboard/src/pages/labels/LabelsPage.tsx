@@ -9,6 +9,7 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import {
   getDiscFamilies,
   getLots,
+  getCatalogDiameters,
   generateLabels,
   exportPdf,
   exportCsv,
@@ -36,20 +37,6 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
-}
-
-const DIAMETERS_BY_FAMILY: Record<string, number[]> = {
-  QUEEN:    [350, 400, 450],
-  KING:     [350, 400, 450],
-  HERCULES: [350, 400, 450],
-  'V-ARRAY': [350, 400, 450, 500],
-}
-
-function defaultDiameters(familyName: string): number[] {
-  for (const [key, vals] of Object.entries(DIAMETERS_BY_FAMILY)) {
-    if (familyName.toUpperCase().includes(key)) return vals
-  }
-  return [350, 400, 450]
 }
 
 function LotBadge({ count, color }: { count: number; color: string }) {
@@ -348,7 +335,7 @@ export default function LabelsPage() {
   const [reason, setReason] = useState('')
   const [lotNumber, setLotNumber] = useState('')
   const [familyId, setFamilyId] = useState('')
-  const [diameter, setDiameter] = useState<number>(400)
+  const [diameter, setDiameter] = useState<number>(0)
   const [quantity, setQuantity] = useState('')
   const [lotError, setLotError] = useState('')
   const [result, setResult] = useState<GenerateResult | null>(null)
@@ -364,7 +351,12 @@ export default function LabelsPage() {
   })
 
   const selectedFamily = families.find((f) => f.id === familyId)
-  const diameters = selectedFamily ? defaultDiameters(selectedFamily.name) : [350, 400, 450]
+
+  const { data: diameters = [], isLoading: diametersLoading } = useQuery({
+    queryKey: ['catalog-diameters', familyId],
+    queryFn: () => getCatalogDiameters(familyId),
+    enabled: !!familyId,
+  })
 
   const genMut = useMutation({
     mutationFn: () => generateLabels({
@@ -451,6 +443,7 @@ export default function LabelsPage() {
       return
     }
     if (!familyId) { toast.error(t('labels.select_family_error')); return }
+    if (!diameter) { toast.error(t('labels.select_diameter_error')); return }
     if (!quantity || Number(quantity) < 1 || Number(quantity) > 10000) {
       toast.error(t('labels.quantity_error'))
       return
@@ -503,7 +496,7 @@ export default function LabelsPage() {
                 <select
                   title={t('labels.family')}
                   value={familyId}
-                  onChange={(e) => { setFamilyId(e.target.value); setDiameter(400) }}
+                  onChange={(e) => { setFamilyId(e.target.value); setDiameter(0) }}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="">— {t('labels.select_family')} —</option>
@@ -516,23 +509,31 @@ export default function LabelsPage() {
 
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('labels.diameter')}</label>
-              <div className="flex gap-2">
-                {diameters.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDiameter(d)}
-                    className={[
-                      'flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition-all',
-                      diameter === d
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
-                    ].join(' ')}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+              {diametersLoading ? (
+                <LoadingSpinner size="sm" className="text-blue-500" />
+              ) : diameters.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-gray-500 py-2">
+                  {familyId ? t('labels.no_diameters') : t('labels.select_family_first')}
+                </p>
+              ) : (
+                <div className="flex gap-2">
+                  {diameters.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDiameter(d)}
+                      className={[
+                        'flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition-all',
+                        diameter === d
+                          ? 'border-blue-600 bg-blue-600 text-white'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
+                      ].join(' ')}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Input
@@ -550,7 +551,7 @@ export default function LabelsPage() {
           <Button
             onClick={handleGenerate}
             loading={genMut.isPending}
-            disabled={!lotNumber || !familyId || !quantity}
+            disabled={!lotNumber || !familyId || !diameter || !quantity}
           >
             {genMut.isPending ? t('labels.generating', { count: Number(quantity) }) : t('labels.generate')}
           </Button>
