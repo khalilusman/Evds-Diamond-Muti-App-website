@@ -63,6 +63,16 @@ export async function createUsageLog(req: Request, res: Response, next: NextFunc
 
     const materialType = req.body.material_type ?? lastLog?.material_type ?? 'unknown'
 
+    if (materialType !== 'unknown') {
+      const validMaterial = await prisma.discCatalog.findFirst({
+        where: { family_id: activation.label.family_id, material_type: materialType },
+      })
+      if (!validMaterial) {
+        res.status(400).json({ error: 'VALIDATION_ERROR', message: 'material_type is not supported by this disc family' })
+        return
+      }
+    }
+
     const log = await prisma.usageLog.create({
       data: {
         activation_id,

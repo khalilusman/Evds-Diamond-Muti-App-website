@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import AppLayout from '../../layouts/AppLayout'
-import { Link } from 'react-router-dom'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -41,6 +40,7 @@ interface FormState {
   downtime_pct:      string
   waste_pct:         string
   multiplier:        string
+  disc_life:         string
 }
 
 const defaultForm = (): FormState => ({
@@ -57,6 +57,7 @@ const defaultForm = (): FormState => ({
   downtime_pct:      '',
   waste_pct:         '',
   multiplier:        '1.0',
+  disc_life:         '',
 })
 
 // ─── DXF Upload Zone ──────────────────────────────────────────────────────────
@@ -346,7 +347,7 @@ export default function CostPage() {
       const lm = Number(form.linear_meters)
       if (!form.linear_meters || lm <= 0) e.linear_meters = t('cost.linear_meters_invalid')
     }
-    if (!form.material_type) e.material_type = t('cost.material_required')
+    if (selectedActivation && !form.material_type) e.material_type = t('cost.material_required')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -366,6 +367,7 @@ export default function CostPage() {
         waste_pct:         form.waste_pct          ? Number(form.waste_pct)         : undefined,
         material_price_m2: form.material_price_m2  ? Number(form.material_price_m2) : undefined,
         estimated_area:    form.estimated_area      ? Number(form.estimated_area)    : undefined,
+        disc_life:         form.disc_life           ? Number(form.disc_life)         : undefined,
       }
       if (inputMethod === 'DXF') {
         return calculateCost({
@@ -437,26 +439,6 @@ export default function CostPage() {
     )
   }
 
-  // ── No active disc gate ──
-  if (activations.length === 0) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center mt-16 text-center px-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 max-w-md w-full space-y-4">
-            <div className="text-6xl">🧮</div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('cost.no_disc_title')}</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('cost.no_disc_body')}
-            </p>
-            <Link to="/activate">
-              <Button fullWidth>{t('cost.activate_disc')}</Button>
-            </Link>
-          </div>
-        </div>
-      </AppLayout>
-    )
-  }
-
   // ── Result view ──
   if (result) {
     return (
@@ -479,24 +461,26 @@ export default function CostPage() {
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 space-y-6">
 
           {/* 1 — Disc selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('cost.active_disc')}
-            </label>
-            <select
-              title={t('cost.active_disc')}
-              value={form.activation_id}
-              onChange={(e) => handleActivationChange(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            >
-              <option value="">{t('cost.no_disc_selected')}</option>
-              {activations.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.label?.unique_code} · {a.machine?.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {activations.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('cost.active_disc')}
+              </label>
+              <select
+                title={t('cost.active_disc')}
+                value={form.activation_id}
+                onChange={(e) => handleActivationChange(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              >
+                <option value="">{t('cost.no_disc_selected')}</option>
+                {activations.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.label?.family?.name} {a.label?.nominal_diameter}mm · {a.label?.unique_code} · {a.machine?.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* 2 — Material selector */}
           {selectedActivation && availableMaterials.length > 0 && (
@@ -562,8 +546,8 @@ export default function CostPage() {
             </div>
           )}
 
-          {/* 4 — Catalog params preview */}
-          {catalog && (
+          {/* 4 — Catalog params preview, or manual disc life when no catalog match */}
+          {catalog ? (
             <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <div>
                 <p className="text-xs text-gray-400 dark:text-gray-500">RPM</p>
@@ -578,6 +562,17 @@ export default function CostPage() {
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{previewLife} m</p>
               </div>
             </div>
+          ) : (
+            <Input
+              label={t('cost.disc_life_manual')}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder={t('cost.disc_life_manual_placeholder')}
+              value={form.disc_life}
+              onChange={(e) => setForm((f) => ({ ...f, disc_life: e.target.value }))}
+              hint={t('cost.disc_life_manual_hint')}
+            />
           )}
 
           {/* 5 — Input method toggle */}

@@ -3,9 +3,10 @@ import { InputHTMLAttributes, useState } from 'react'
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  hint?: string
 }
 
-export default function Input({ label, error, type = 'text', className = '', ...props }: InputProps) {
+export default function Input({ label, error, hint, type = 'text', className = '', ...props }: InputProps) {
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = type === 'password'
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type
@@ -54,6 +55,7 @@ export default function Input({ label, error, type = 'text', className = '', ...
         )}
       </div>
       {error && <p className="mt-1.5 text-sm text-red-500">{error}</p>}
+      {hint && !error && <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">{hint}</p>}
     </div>
   )
 }

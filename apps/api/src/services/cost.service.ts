@@ -23,6 +23,7 @@ interface CostInput {
   estimated_area?:    number
   config:             CostConfig
   catalog?:           CatalogParams | null
+  manual_life_lm?:    number
 }
 
 export interface CostResult {
@@ -49,7 +50,7 @@ export interface CostResult {
 export function calculateCost(input: CostInput): CostResult {
   const {
     metres_to_cut, disc_price, thickness, config, catalog,
-    material_price_m2 = 0, estimated_area = 0,
+    material_price_m2 = 0, estimated_area = 0, manual_life_lm,
   } = input
 
   let feed_mm_min = 2000
@@ -58,6 +59,8 @@ export function calculateCost(input: CostInput): CostResult {
     const useT2 = Math.abs(Number(catalog.thickness_t2) - thickness) < 0.01
     feed_mm_min = useT2 ? catalog.feed_t2 : catalog.feed_t1
     life_lm     = useT2 ? catalog.life_t2  : catalog.life_t1
+  } else if (manual_life_lm) {
+    life_lm = manual_life_lm
   }
 
   const time_minutes  = (metres_to_cut * 1000) / feed_mm_min

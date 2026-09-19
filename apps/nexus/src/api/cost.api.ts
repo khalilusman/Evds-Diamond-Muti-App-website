@@ -59,6 +59,7 @@ export interface CalculatePayload {
   waste_pct?:           number
   material_price_m2?:   number
   estimated_area?:      number
+  disc_life?:           number
 }
 
 export const getCostConfig = async (): Promise<CostConfig | null> => {

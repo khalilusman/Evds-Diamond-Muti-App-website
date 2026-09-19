@@ -96,6 +96,7 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
       total_linear_meters, disc_price, thickness, material_type,
       machine_cost_hour, labor_cost_hour, energy_cost_kwh,
       downtime_pct, waste_pct, material_price_m2, estimated_area,
+      disc_life,
     } = req.body
 
     if (!input_method || !['DXF', 'MANUAL', 'dxf', 'manual'].includes(input_method)) {
@@ -177,6 +178,7 @@ export async function calculate(req: Request, res: Response, next: NextFunction)
         feed_t2:      catalogParams.feed_t2,
         life_t2:      catalogParams.life_t2,
       } : null,
+      manual_life_lm: disc_life !== undefined ? Number(disc_life) : undefined,
     })
 
     await prisma.costCalculation.create({

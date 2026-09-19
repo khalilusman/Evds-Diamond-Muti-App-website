@@ -17,8 +17,17 @@ const CUT_TYPES = [
   { value: 'curve', label: 'Curve' },
 ]
 
+const MATERIAL_LABELS: Record<string, string> = {
+  quartzite_es:   'Quartzite (Cuarcita)',
+  porcelain:      'Porcelain / Dekton',
+  quartzite:      'Marble',
+  granite:        'Granite',
+  compact_quartz: 'Compact Quartz',
+}
+
 interface FormState {
   activation_id: string
+  material_type: string
   thickness: string
   current_diameter: string
   meters_cut: string
@@ -31,6 +40,7 @@ interface FormState {
 
 const defaultForm = (): FormState => ({
   activation_id: '',
+  material_type: '',
   thickness: '2.0',
   current_diameter: '',
   meters_cut: '',
@@ -68,22 +78,36 @@ export default function UsagePage() {
 
   const selectedActivation = activations.find((a) => a.id === form.activation_id) ?? null
 
-  const { data: catalogList = [] } = useQuery({
-    queryKey: [
-      'catalog',
-      selectedActivation?.label?.family?.id,
-      selectedActivation?.material_type,
-      selectedActivation?.label?.nominal_diameter,
-    ],
+  // Fetch ALL catalog entries for this family + diameter, not locked to the activation's original material
+  const { data: familyCatalog = [] } = useQuery({
+    queryKey: ['catalog', selectedActivation?.label?.family?.id, selectedActivation?.label?.nominal_diameter],
     queryFn: () =>
       getCatalog({
         family_id: selectedActivation!.label.family.id,
-        material_type: selectedActivation!.material_type ?? undefined,
         nominal_diameter: selectedActivation!.label.nominal_diameter,
       }),
     enabled: !!selectedActivation,
   })
-  const catalog = catalogList[0]
+
+  const availableMaterials: string[] = (() => {
+    const seen = new Set<string>()
+    return familyCatalog
+      .filter((e) => { if (seen.has(e.material_type)) return false; seen.add(e.material_type); return true })
+      .map((e) => e.material_type)
+  })()
+
+  // Default material once the catalog loads: prefer the activation's original material, else the first available one
+  useEffect(() => {
+    if (availableMaterials.length > 0 && !form.material_type) {
+      const preferred = selectedActivation?.material_type && availableMaterials.includes(selectedActivation.material_type)
+        ? selectedActivation.material_type
+        : availableMaterials[0]
+      setForm((f) => ({ ...f, material_type: preferred }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableMaterials.join(','), selectedActivation?.id])
+
+  const catalog = familyCatalog.find((e) => e.material_type === form.material_type) ?? null
   const selectedThickness = Number(form.thickness) || 2.0
   const useT2 = catalog
     ? Math.abs(Number(catalog.thickness_t2) - selectedThickness) < 0.01
@@ -91,6 +115,10 @@ export default function UsagePage() {
   const recommendedFeed = catalog ? (useT2 ? catalog.feed_t2 : catalog.feed_t1) : null
   const recommendedLife = catalog ? (useT2 ? catalog.life_t2 : catalog.life_t1) : null
   const recommendedRpm = catalog?.rpm ?? null
+
+  function handleMaterialChange(mat: string) {
+    setField('material_type', mat)
+  }
 
   // Pre-select from URL param
   useEffect(() => {
@@ -125,7 +153,7 @@ export default function UsagePage() {
         current_diameter: parseFloat(form.current_diameter),
         meters_cut: parseFloat(form.meters_cut),
         thickness: Number(form.thickness),
-        material_type: selectedActivation?.material_type ?? 'unknown',
+        material_type: form.material_type || selectedActivation?.material_type || 'unknown',
         rpm_used: form.rpm_used ? parseInt(form.rpm_used, 10) : null,
         feed_used: form.feed_used ? parseInt(form.feed_used, 10) : null,
         cut_type: form.cut_type || null,
@@ -231,7 +259,11 @@ export default function UsagePage() {
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => setField('activation_id', a.id)}
+                      onClick={() => {
+                        setForm((f) => ({ ...f, activation_id: a.id, material_type: '', thickness: '2.0' }))
+                        setErrors((er) => ({ ...er, activation_id: undefined }))
+                        setCustomThickness(false)
+                      }}
                       className={[
                         'w-full text-left px-4 py-3 rounded-xl border-2 transition-all',
                         form.activation_id === a.id
@@ -259,6 +291,41 @@ export default function UsagePage() {
                   <p className="mt-1 text-sm text-red-500">{errors.activation_id as string}</p>
                 )}
               </div>
+
+              {/* Material selector */}
+              {selectedActivation && availableMaterials.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('usage.material')}
+                  </label>
+                  {availableMaterials.length === 1 ? (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        {MATERIAL_LABELS[availableMaterials[0]] ?? availableMaterials[0]}
+                      </span>
+                      <span className="text-xs text-blue-400 dark:text-blue-500">{t('usage.auto_selected')}</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {availableMaterials.map((mat) => (
+                        <button
+                          key={mat}
+                          type="button"
+                          onClick={() => handleMaterialChange(mat)}
+                          className={[
+                            'px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                            form.material_type === mat
+                              ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-400',
+                          ].join(' ')}
+                        >
+                          {MATERIAL_LABELS[mat] ?? mat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Thickness selector */}
               {selectedActivation && (
