@@ -19,7 +19,7 @@ const CUT_TYPES = [
 
 const MATERIAL_LABELS: Record<string, string> = {
   quartzite_es:   'Quartzite (Cuarcita)',
-  porcelain:      'Porcelain / Dekton',
+  porcelain:      'Porcelain / Quartzite',
   quartzite:      'Marble',
   granite:        'Granite',
   compact_quartz: 'Compact Quartz',

@@ -9,7 +9,7 @@ const MATERIALS = {
     thickness_options: [2.0, 3.0],
   },
   porcelain: {
-    label: 'Porcelain / Dekton',
+    label: 'Porcelain / Quartzite',
     subtypes: ['Standard Porcelain', 'Large Format', 'Dekton', 'Neolith', 'Other'],
     compatible_families: ['THE KING', 'HERCULES'],
     thickness_options: [2.0, 1.2],
